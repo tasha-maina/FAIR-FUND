@@ -24,3 +24,6 @@ app.use('/api/auth', authRoutes)
 
 const applicationRoutes = require('./routes/applications')
 app.use('/api/applications', applicationRoutes)
+
+const mpesaRoutes = require('./routes/mpesa')
+app.use('/api/mpesa', mpesaRoutes)

@@ -24,6 +24,7 @@ const createTables = async () => {
         previous_repayment BOOLEAN,
         credit_score INT,
         status VARCHAR(50) DEFAULT 'submitted',
+        admin_note TEXT,
         submitted_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -42,6 +43,7 @@ const createTables = async () => {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         application_id UUID REFERENCES loan_applications(id),
         amount DECIMAL,
+        checkout_request_id VARCHAR(100),
         mpesa_transaction_id VARCHAR(100),
         payment_status VARCHAR(50) DEFAULT 'pending',
         paid_at TIMESTAMP
@@ -69,7 +71,10 @@ const createTables = async () => {
     console.log('All tables created successfully')
   } catch (err) {
     console.error('Error creating tables', err)
-  } finally {
+    } finally {
+    await pool.query(`ALTER TABLE evaluation_fees ADD COLUMN IF NOT EXISTS checkout_request_id VARCHAR(100)`)
+    await pool.query(`ALTER TABLE loan_applications ADD COLUMN IF NOT EXISTS admin_note TEXT`)
+    await pool.query(`ALTER TABLE loan_offers ADD COLUMN IF NOT EXISTS mpesa_transaction_id VARCHAR(100)`)
     process.exit()
   }
 }
