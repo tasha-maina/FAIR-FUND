@@ -226,4 +226,75 @@ router.get('/status/:checkout', protect, async (req, res) => {
   }
 })
 
+// Admin-only disbursement endpoint: send funds to applicant via M-Pesa B2C
+router.post('/disburse', protect, async (req, res) => {
+  const caller = req.user
+  if (!caller || caller.role !== 'admin') return res.status(403).json({ message: 'Admin access required' })
+
+  const { application_id } = req.body
+  if (!application_id) return res.status(400).json({ message: 'Missing application_id' })
+
+  try {
+    // load application and applicant phone
+    const appRes = await pool.query(
+      `SELECT la.id, la.loan_amount, la.status, u.phone_number
+       FROM loan_applications la
+       JOIN users u ON u.id = la.user_id
+       WHERE la.id = $1`,
+      [application_id]
+    )
+
+    if (appRes.rows.length === 0) return res.status(404).json({ message: 'Application not found' })
+
+    const application = appRes.rows[0]
+
+    if (application.status !== 'approved') {
+      return res.status(400).json({ message: 'Application must be approved before disbursement' })
+    }
+
+    // ensure evaluation fee was paid
+    const feeRes = await pool.query('SELECT * FROM evaluation_fees WHERE application_id = $1', [application_id])
+    if (feeRes.rows.length === 0) return res.status(400).json({ message: 'Evaluation fee record missing' })
+    const fee = feeRes.rows[0]
+    if (fee.payment_status !== 'completed') return res.status(400).json({ message: 'Evaluation fee not completed' })
+
+    const recipientPhone = normalizePhoneNumber(application.phone_number)
+
+    if (!process.env.MPESA_SECURITY_CREDENTIAL) {
+      return res.status(500).json({ message: 'MPESA_SECURITY_CREDENTIAL not configured in environment' })
+    }
+
+    const accessToken = await getAccessToken()
+
+    const b2cPayload = {
+      InitiatorName: 'testapi',
+      SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL,
+      OriginatorConversationID: Date.now().toString(),
+      CommandID: 'BusinessPayment',
+      Amount: parseFloat(application.loan_amount),
+      PartyA: process.env.MPESA_SHORTCODE,
+      PartyB: recipientPhone,
+      Remarks: `Disbursement for application ${application_id}`,
+      QueueTimeOutURL: process.env.MPESA_B2C_TIMEOUT_URL || process.env.MPESA_CALLBACK_URL,
+      ResultURL: process.env.MPESA_B2C_RESULT_URL || process.env.MPESA_CALLBACK_URL,
+      Occasion: `LoanDisbursement_${application_id}`
+    }
+
+    const resp = await axios.post('https://sandbox.safaricom.co.ke/mpesa/b2c/v3/paymentrequest', b2cPayload, { headers: { Authorization: `Bearer ${accessToken}` } })
+
+    if (!resp.data || !resp.data.ResponseDescription) {
+      console.error('Unexpected B2C response', resp.data)
+      return res.status(500).json({ message: 'Unexpected B2C response', data: resp.data })
+    }
+
+    // update application status to disbursed
+    await pool.query('UPDATE loan_applications SET status = $1, updated_at = NOW() WHERE id = $2', ['disbursed', application_id])
+
+    return res.json({ ok: true, response: resp.data })
+  } catch (err) {
+    console.error('B2C disbursement error', err.response?.data || err.message)
+    return res.status(500).json({ message: 'Disbursement failed', error: err.response?.data || err.message })
+  }
+})
+
 module.exports = router
