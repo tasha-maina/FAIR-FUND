@@ -109,3 +109,12 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+a:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+a {
+  transition: all 0.2s ease;
+}
