@@ -3,45 +3,48 @@ import { Link } from 'react-router-dom'
 const Landing = () => {
   return (
     <div style={styles.container}>
-      <nav style={styles.nav}>
-        <h1 style={styles.logo}>Fair Fund</h1>
-        <div style={styles.navLinks}>
-          <Link to="/login" style={styles.loginBtn}>Login</Link>
-          <Link to="/register" style={styles.registerBtn}>Get Started</Link>
-        </div>
-      </nav>
-
       <section style={styles.hero}>
-        <div style={styles.heroContent}>
-          <span style={styles.badge}>Built for Kenyans</span>
-          <h2 style={styles.heroTitle}>Fair Loans.<br />Real Credit.<br />Your M-Pesa.</h2>
-          <p style={styles.heroSubtitle}>
-            Access credit based on your real financial profile.
-            Transparent scoring. No hidden fees. Funds straight to your phone.
-          </p>
-          <div style={styles.heroBtns}>
-            <Link to="/register" style={styles.primaryBtn}>Apply Now</Link>
-            <Link to="/login" style={styles.secondaryBtn}>Sign In</Link>
+        <div style={styles.heroInner}>
+          <div style={styles.heroContent}>
+            <span style={styles.badge}>Built for Kenyans</span>
+            <h2 style={styles.heroTitle}>Fair Loans.<br />Real Credit.<br />Your M-Pesa.</h2>
+            <p style={styles.heroSubtitle}>
+              Access credit based on your real financial profile. Transparent scoring. No hidden fees. Funds straight to your phone.
+            </p>
+            <div style={styles.heroBtns}>
+              <Link to="/register" style={styles.primaryBtn}>Apply Now</Link>
+              <Link to="/login" style={styles.secondaryBtn}>Sign In</Link>
+            </div>
           </div>
-        </div>
-        <div style={styles.heroStats}>
-          <div style={styles.stat}>
-            <span style={styles.statNumber}>5%</span>
-            <span style={styles.statLabel}>Evaluation Fee</span>
-          </div>
-          <div style={styles.statDivider} />
-          <div style={styles.stat}>
-            <span style={styles.statNumber}>100</span>
-            <span style={styles.statLabel}>Max Credit Score</span>
-          </div>
-          <div style={styles.statDivider} />
-          <div style={styles.stat}>
-            <span style={styles.statNumber}>24hr</span>
-            <span style={styles.statLabel}>Review Time</span>
+
+          <div style={styles.heroVisual}>
+            <div style={{width: '100%', maxWidth: 340}}>
+              <div style={{background: NAVY_LIGHT, padding: '1.5rem', borderRadius: 12}}>
+                <div style={{display:'flex',flexDirection:'column',gap:12,alignItems:'center'}}>
+                  <div style={{width:80,height:80,borderRadius:18,background: GOLD}} />
+                  <div style={{width:'100%',height:12,background:'#0f2a46',borderRadius:6}} />
+                  <div style={{width:'100%',height:12,background:'#0f2a46',borderRadius:6}} />
+                </div>
+              </div>
+
+              <div style={{marginTop:18,display:'flex',justifyContent:'space-between'}}>
+                <div style={{textAlign:'center'}}>
+                  <div style={styles.statNumber}>5%</div>
+                  <div style={styles.statLabel}>Evaluation Fee</div>
+                </div>
+                <div style={{textAlign:'center'}}>
+                  <div style={styles.statNumber}>100</div>
+                  <div style={styles.statLabel}>Max Score</div>
+                </div>
+                <div style={{textAlign:'center'}}>
+                  <div style={styles.statNumber}>24hr</div>
+                  <div style={styles.statLabel}>Review</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
-
       <section style={styles.howItWorks}>
         <h3 style={styles.sectionTitle}>How It Works</h3>
         <p style={styles.sectionSubtitle}>Five steps to access fair credit</p>
@@ -114,10 +117,13 @@ const styles = {
   registerBtn: { textDecoration: 'none', backgroundColor: GOLD, color: NAVY, padding: '0.6rem 1.4rem', borderRadius: '8px', fontWeight: '700' },
   badge: { backgroundColor: NAVY_LIGHT, color: GOLD, padding: '0.4rem 1rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', border: `1px solid ${GOLD}` },
   heroTitle: { fontSize: '3.5rem', fontWeight: '800', lineHeight: '1.15', margin: '1.5rem 0', color: WHITE },
-  hero: { padding: '6rem 4rem', backgroundColor: NAVY, borderBottom: `1px solid ${NAVY_LIGHT}`, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' },  heroContent: { maxWidth: '700px', marginBottom: '4rem', textAlign: 'center' },
+  hero: { padding: '6rem 4rem', backgroundColor: NAVY, borderBottom: `1px solid ${NAVY_LIGHT}` },
+  heroInner: { display: 'flex', gap: '2rem', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '1100px', margin: '0 auto' },
+  heroContent: { flex: '1 1 60%', maxWidth: '700px' , textAlign: 'left' },
+  heroVisual: { flex: '0 0 360px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   heroSubtitle: { fontSize: '1.1rem', color: GRAY, maxWidth: '500px', lineHeight: '1.7', margin: '0 auto' },
-  heroBtns: { display: 'flex', gap: '1rem', marginTop: '2.5rem', justifyContent: 'center' },
-  heroStats: { display: 'flex', gap: '3rem', alignItems: 'center', marginTop: '3rem', justifyContent: 'center' },
+  heroBtns: { display: 'flex', gap: '1rem', marginTop: '2rem' },
+  heroStats: { display: 'flex', gap: '2rem', alignItems: 'center', marginTop: '1rem', justifyContent: 'center', flexDirection: 'column' },
   primaryBtn: { textDecoration: 'none', backgroundColor: GOLD, color: NAVY, padding: '0.9rem 2rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem' },
   secondaryBtn: { textDecoration: 'none', border: `2px solid ${GOLD}`, color: GOLD, padding: '0.9rem 2rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem' },
   stat: { display: 'flex', flexDirection: 'column' },

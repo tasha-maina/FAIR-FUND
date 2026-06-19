@@ -118,3 +118,17 @@ a:hover {
 a {
   transition: all 0.2s ease;
 }
+.primary-btn:hover {
+  background-color: #f0c96a !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(201, 168, 76, 0.3);
+}
+
+.secondary-btn:hover {
+  background-color: rgba(201, 168, 76, 0.1) !important;
+  transform: translateY(-2px);
+}
+
+.primary-btn, .secondary-btn {
+  transition: all 0.2s ease;
+}
