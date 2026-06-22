@@ -9,11 +9,38 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user')
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser))
+
+    const init = async () => {
+      if (!token) {
+        if (storedUser) setUser(JSON.parse(storedUser))
+        setLoading(false)
+        return
+      }
+
+      try {
+        const res = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) {
+          // token invalid or expired
+          setUser(null)
+          setToken(null)
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          setLoading(false)
+          return
+        }
+
+        const data = await res.json()
+        setUser(data.user)
+        localStorage.setItem('user', JSON.stringify(data.user))
+      } catch (err) {
+        console.error('Error fetching profile', err)
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
-  }, [])
+
+    init()
+  }, [token])
 
   const login = (userData, tokenData) => {
     setUser(userData)

@@ -3,9 +3,15 @@ const router = express.Router()
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const pool = require('../db')
+const protect = require('../middleware/auth')
 
 router.post('/register', async (req, res) => {
   const { full_name, email, password, phone_number, national_id } = req.body
+
+  // enforce national_id presence and basic format server-side
+  if (!national_id || !/^[0-9]{7,12}$/.test(national_id)) {
+    return res.status(400).json({ message: 'National ID is required and must be 7-12 digits' })
+  }
 
   try {
     const userExists = await pool.query(
@@ -72,3 +78,15 @@ router.post('/login', async (req, res) => {
 })
 
 module.exports = router
+
+// Return current authenticated user's profile
+router.get('/me', protect, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT id, full_name, email, phone_number, role FROM users WHERE id = $1', [req.user.id])
+    if (r.rows.length === 0) return res.status(404).json({ message: 'User not found' })
+    return res.json({ user: r.rows[0] })
+  } catch (err) {
+    console.error('Get profile error', err)
+    return res.status(500).json({ message: 'Server error' })
+  }
+})
