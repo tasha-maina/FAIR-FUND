@@ -7,6 +7,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import Notifications from './components/Notifications'
 import { useAuth } from './context/AuthContext'
+import Applications from './pages/Applications'
 
 function App() {
   const { user } = useAuth()
@@ -21,6 +22,11 @@ function App() {
             <Dashboard />
             {user && <Notifications />}
           </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/applications" element={
+        <ProtectedRoute>
+          <Applications />
         </ProtectedRoute>
       } />
       <Route path="/admin" element={
