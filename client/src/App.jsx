@@ -8,11 +8,13 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Notifications from './components/Notifications'
 import { useAuth } from './context/AuthContext'
 import Applications from './pages/Applications'
+import DevQuickLogin from './components/DevQuickLogin'
 
 function App() {
   const { user } = useAuth()
   return (
     <Routes>
+      <DevQuickLogin />
       <Route path="/" element={<Landing />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
