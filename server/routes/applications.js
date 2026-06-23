@@ -136,6 +136,16 @@ router.patch('/:id/review', protect, async (req, res) => {
 
     if (update.rows.length === 0) return res.status(404).json({ message: 'Application not found' })
 
+    // create notification for the applicant
+    try {
+      const applicantId = update.rows[0].user_id
+      const title = `Application ${update.rows[0].id} ${update.rows[0].status}`
+      const body = `Your application status has been updated to ${update.rows[0].status}.`
+      await pool.query('INSERT INTO notifications (user_id, title, body, type, meta) VALUES ($1, $2, $3, $4, $5)', [applicantId, title, body, 'application', JSON.stringify({ application_id: update.rows[0].id })])
+    } catch (e) {
+      console.warn('Failed to create notification', e.message || e)
+    }
+
     return res.json({ ok: true, application: update.rows[0] })
   } catch (err) {
     console.error('Admin review error', err)
@@ -254,6 +264,15 @@ router.post('/:id/disburse', protect, async (req, res) => {
     // update offer with mpesa transaction id and mark application disbursed
     await pool.query('UPDATE loan_offers SET mpesa_transaction_id = $1, status = $2 WHERE id = $3', [mpesaTxId, 'disbursed', offer.id])
     await pool.query('UPDATE loan_applications SET status = $1, updated_at = NOW() WHERE id = $2', ['disbursed', id])
+
+    // create notification for applicant about disbursement
+    try {
+      const title = `Loan disbursed for application ${id}`
+      const body = `We have disbursed KES ${application.loan_amount} to ${recipientPhone}. Transaction id: ${mpesaTxId}`
+      await pool.query('INSERT INTO notifications (user_id, title, body, type, meta) VALUES ($1, $2, $3, $4, $5)', [application.user_id, title, body, 'disbursement', JSON.stringify({ application_id: id, mpesa_tx: mpesaTxId })])
+    } catch (e) {
+      console.warn('Failed to create disbursement notification', e.message || e)
+    }
 
     return res.json({ ok: true, mpesa_transaction_id: mpesaTxId })
   } catch (err) {

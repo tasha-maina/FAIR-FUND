@@ -67,6 +67,17 @@ const createTables = async () => {
         mpesa_transaction_id VARCHAR(100),
         paid_at TIMESTAMP DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS notifications (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id),
+        title VARCHAR(255) NOT NULL,
+        body TEXT NOT NULL,
+        type VARCHAR(50) DEFAULT 'info',
+        read BOOLEAN DEFAULT false,
+        meta JSON,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
     `)
     console.log('All tables created successfully')
   } catch (err) {

@@ -27,3 +27,5 @@ app.use('/api/applications', applicationRoutes)
 
 const mpesaRoutes = require('./routes/mpesa')
 app.use('/api/mpesa', mpesaRoutes)
+const notificationsRoutes = require('./routes/notifications')
+app.use('/api/notifications', notificationsRoutes)
