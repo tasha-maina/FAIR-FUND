@@ -5,8 +5,11 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
+import Notifications from './components/Notifications'
+import { useAuth } from './context/AuthContext'
 
 function App() {
+  const { user } = useAuth()
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
@@ -14,7 +17,10 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <Dashboard />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dashboard />
+            {user && <Notifications />}
+          </div>
         </ProtectedRoute>
       } />
       <Route path="/admin" element={
