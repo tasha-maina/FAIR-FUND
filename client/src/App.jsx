@@ -13,30 +13,32 @@ import DevQuickLogin from './components/DevQuickLogin'
 function App() {
   const { user } = useAuth()
   return (
-    <Routes>
+    <>
       <DevQuickLogin />
-      <Route path="/" element={<Landing />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Dashboard />
-            {user && <Notifications />}
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/applications" element={
-        <ProtectedRoute>
-          <Applications />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin" element={
-        <ProtectedRoute adminOnly={true}>
-          <AdminDashboard />
-        </ProtectedRoute>
-      } />
-    </Routes>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Dashboard />
+              {user && <Notifications />}
+            </div>
+          </ProtectedRoute>
+        } />
+        <Route path="/applications" element={
+          <ProtectedRoute>
+            <Applications />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute adminOnly={true}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </>
   )
 }
 
