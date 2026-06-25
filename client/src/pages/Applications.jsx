@@ -4,13 +4,15 @@ import { useNavigate } from 'react-router-dom'
 import './dashboard.css'
 
 const Applications = () => {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const navigate = useNavigate()
   const [apps, setApps] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [form, setForm] = useState({ loan_amount: '', purpose: '', employment_status: 'employed', stable_income: true, previous_repayment: true })
   const [result, setResult] = useState(null)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState(null)
 
   const fetchApps = async () => {
     if (!token) return
@@ -46,6 +48,54 @@ const Applications = () => {
       await fetchApps()
     } catch (err) {
       setError('Network error')
+    }
+  }
+
+  const handlePayEvaluationFee = async () => {
+    if (!user || !user.phone_number) {
+      setPaymentError('Phone number not found in profile')
+      return
+    }
+    if (!result) return
+
+    setPaymentLoading(true)
+    setPaymentError(null)
+    try {
+      // Find the most recent unpaid application to get its ID
+      const unpaidApp = apps.find(a => a.status === 'pending')
+      if (!unpaidApp) {
+        setPaymentError('No pending application found')
+        setPaymentLoading(false)
+        return
+      }
+
+      const res = await fetch('/api/mpesa/stkpush', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          phone_number: user.phone_number,
+          application_id: unpaidApp.id
+        })
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setPaymentError(data.message || 'Payment initiation failed')
+        setPaymentLoading(false)
+        return
+      }
+
+      setPaymentLoading(false)
+      setResult(null)
+      setForm({ loan_amount: '', purpose: '', employment_status: 'employed', stable_income: true, previous_repayment: true })
+      // Optionally refresh apps after a short delay to check for payment status updates
+      setTimeout(() => fetchApps(), 2000)
+    } catch (err) {
+      setPaymentError('Network error initiating payment')
+      setPaymentLoading(false)
     }
   }
 
@@ -116,10 +166,19 @@ const Applications = () => {
                 <div className="stat-value">{result.risk_level}</div>
                 <div className="stat-label">Risk level</div>
               </div>
-              <div className="stat-card">
-                <div className="stat-value">{result.evaluation_fee}</div>
+              <div className="stat-card" style={{ marginBottom: 12 }}>
+                <div className="stat-value">KES {result.evaluation_fee}</div>
                 <div className="stat-label">Evaluation fee</div>
               </div>
+              {paymentError && <div style={{ color: '#ff8a8a', fontSize: 12, marginBottom: 8 }}>{paymentError}</div>}
+              <button 
+                className="action-btn" 
+                onClick={handlePayEvaluationFee} 
+                disabled={paymentLoading}
+                style={{ width: '100%' }}
+              >
+                {paymentLoading ? 'Processing...' : 'Pay evaluation fee'}
+              </button>
             </div>
           )}
         </aside>
