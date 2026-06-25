@@ -62,7 +62,7 @@ const Applications = () => {
     setPaymentError(null)
     try {
       // Find the most recent unpaid application to get its ID
-      const unpaidApp = apps.find(a => a.status === 'pending')
+      const unpaidApp = apps.find(a => a.status === 'submitted')
       if (!unpaidApp) {
         setPaymentError('No pending application found')
         setPaymentLoading(false)

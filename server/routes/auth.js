@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     )
 
-    res.json({ token, user: { id: user.rows[0].id, full_name: user.rows[0].full_name, email: user.rows[0].email, role: user.rows[0].role } })
+    res.json({ token, user: { id: user.rows[0].id, full_name: user.rows[0].full_name, email: user.rows[0].email, phone_number: user.rows[0].phone_number, role: user.rows[0].role } })
 
   } catch (err) {
     console.error(err)
