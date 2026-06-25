@@ -26,7 +26,7 @@ const Dashboard = () => {
         }
         const data = await res.json()
         // applications list -> build simple stats and recent activity
-        setRecent(data.slice(0, 5).map(a => ({ id: a.id, title: `Application ${a.id} - ${a.status}`, date: a.updated_at || a.submitted_at || '', amount: `KES ${a.loan_amount}` })))
+        setRecent(data.slice(0, 5).map(a => ({ id: a.id, title: `Application ${a.id} - ${a.status}`, date: a.updated_at || a.submitted_at || '', amount: `KES ${a.loan_amount}`, status: a.status })))
         setStats([
           { label: 'Applications', value: String(data.length) },
           { label: 'Approved', value: String(data.filter(d => d.status === 'approved').length) },
@@ -46,7 +46,7 @@ const Dashboard = () => {
     <div className="dashboard-root">
       <header className="dash-header">
         <h1>Welcome back{user ? `, ${user.full_name || ''}` : ''}</h1>
-        <p className="muted">Here’s a quick summary of your account</p>
+        <p className="muted">Here's a quick summary of your account</p>
       </header>
 
       {!loading && stats.length > 0 && stats[0].value === '0' ? (
@@ -80,7 +80,14 @@ const Dashboard = () => {
                         <div className="activity-title">{r.title}</div>
                         <div className="activity-date muted">{r.date}</div>
                       </div>
-                      <div className="activity-amount">{r.amount}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div className="activity-amount">{r.amount}</div>
+                        {r.status === 'submitted' && (
+                          <Link to={`/pay/${r.id}`} className="action-btn" style={{ padding: '0.3rem 0.7rem', fontSize: '0.85rem' }}>
+                            Pay fee
+                          </Link>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>

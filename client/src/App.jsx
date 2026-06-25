@@ -9,6 +9,7 @@ import Notifications from './components/Notifications'
 import { useAuth } from './context/AuthContext'
 import Applications from './pages/Applications'
 import DevQuickLogin from './components/DevQuickLogin'
+import PayFee from './pages/PayFee'
 
 function App() {
   const { user } = useAuth()
@@ -35,6 +36,11 @@ function App() {
         <Route path="/admin" element={
           <ProtectedRoute adminOnly={true}>
             <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/pay/:applicationId" element={
+          <ProtectedRoute>
+            <PayFee />
           </ProtectedRoute>
         } />
       </Routes>
