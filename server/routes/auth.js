@@ -77,8 +77,6 @@ router.post('/login', async (req, res) => {
   }
 })
 
-module.exports = router
-
 // Return current authenticated user's profile
 router.get('/me', protect, async (req, res) => {
   try {
@@ -90,3 +88,5 @@ router.get('/me', protect, async (req, res) => {
     return res.status(500).json({ message: 'Server error' })
   }
 })
+
+module.exports = router

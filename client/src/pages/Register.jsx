@@ -82,7 +82,7 @@ const Register = () => {
         <label style={styles.label}>Phone number</label>
         <input name="phone_number" value={form.phone_number} onChange={handleChange} style={styles.input} placeholder="07XXXXXXXX" />
 
-        <label style={styles.label}>National ID (optional)</label>
+        <label style={styles.label}>National ID</label>
         <input name="national_id" value={form.national_id} onChange={handleChange} style={styles.input} />
 
         <label style={styles.label}>Password</label>

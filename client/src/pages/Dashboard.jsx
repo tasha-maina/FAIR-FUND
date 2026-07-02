@@ -11,6 +11,7 @@ const Dashboard = () => {
   const [recent, setRecent] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [pendingFeeAppId, setPendingFeeAppId] = useState(null)
 
   useEffect(() => {
     if (!token) return
@@ -25,6 +26,10 @@ const Dashboard = () => {
           return
         }
         const data = await res.json()
+        // find most recent unpaid application
+        const unpaid = data.find(a => a.status === 'submitted')
+        setPendingFeeAppId(unpaid ? unpaid.id : null)
+
         // applications list -> build simple stats and recent activity
         setRecent(data.slice(0, 5).map(a => ({ id: a.id, title: `Application ${a.id} - ${a.status}`, date: a.updated_at || a.submitted_at || '', amount: `KES ${a.loan_amount}`, status: a.status })))
         setStats([
@@ -55,7 +60,7 @@ const Dashboard = () => {
           <p className="muted">You don't have any applications yet. Start by applying for a loan — we'll guide you through the process.</p>
           <div className="empty-actions">
             <Link to="/applications" className="primary-btn">Apply for a loan</Link>
-            <Link to="/dashboard" className="secondary-btn">Pay evaluation fee</Link>
+            {pendingFeeAppId && <Link to={`/pay/${pendingFeeAppId}`} className="secondary-btn">Pay evaluation fee</Link>}
           </div>
         </div>
       ) : (
@@ -99,7 +104,7 @@ const Dashboard = () => {
                 <h3>Quick actions</h3>
                 <div className="actions">
                   <Link to="/applications" className="action-btn">Apply for loan</Link>
-                  <Link to="/dashboard" className="action-btn secondary">Pay evaluation fee</Link>
+                  <Link to={pendingFeeAppId ? `/pay/${pendingFeeAppId}` : '/applications'} className="action-btn secondary">Pay evaluation fee</Link>
                 </div>
               </div>
 

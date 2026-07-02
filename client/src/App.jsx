@@ -10,12 +10,14 @@ import { useAuth } from './context/AuthContext'
 import Applications from './pages/Applications'
 import DevQuickLogin from './components/DevQuickLogin'
 import PayFee from './pages/PayFee'
+import Navbar from './components/Navbar'
 
 function App() {
   const { user } = useAuth()
   return (
     <>
       <DevQuickLogin />
+      <Navbar />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/register" element={<Register />} />

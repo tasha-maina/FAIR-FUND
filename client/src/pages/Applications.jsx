@@ -167,7 +167,7 @@ const Applications = () => {
                 <div className="stat-label">Risk level</div>
               </div>
               <div className="stat-card" style={{ marginBottom: 12 }}>
-                <div className="stat-value">KES {result.evaluation_fee}</div>
+                <div className="stat-value">{result.evaluation_fee}</div>
                 <div className="stat-label">Evaluation fee</div>
               </div>
               {paymentError && <div style={{ color: '#ff8a8a', fontSize: 12, marginBottom: 8 }}>{paymentError}</div>}

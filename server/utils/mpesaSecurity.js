@@ -1,7 +1,27 @@
 const crypto = require('crypto')
+const fs = require('fs')
 
-const generateSecurityCredential = (password) => {
-  const sandboxPublicKey = `-----BEGIN CERTIFICATE-----
+const generateSecurityCredential = (password, certPath) => {
+  let publicKey = null
+
+  if (certPath) {
+    try {
+      if (fs.existsSync(certPath)) {
+        const fileContent = fs.readFileSync(certPath)
+        const strContent = fileContent.toString('utf8').trim()
+        if (strContent.startsWith('<!DOCTYPE') || strContent.startsWith('<html')) {
+          console.warn(`Certificate at ${certPath} is invalid HTML (probably a 404 page). Falling back to sandbox key.`)
+        } else {
+          publicKey = fileContent
+        }
+      }
+    } catch (err) {
+      console.warn(`Could not read certificate from ${certPath}, falling back to sandbox key:`, err.message)
+    }
+  }
+
+  if (!publicKey) {
+    publicKey = `-----BEGIN CERTIFICATE-----
 MIIG0TCCBbmgAwIBAgIQAqkY9b3bp3L/+F43fe3A8zANBgkqhkiG9w0BAQsFADBZ
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMTMwMQYDVQQDEypE
 aWdpQ2VydCBHbG9iYWwgRzIgVExTIFJTQSBTSEEyNTYgMjAyMCBDQTEwHhcNMjUw
@@ -40,11 +60,12 @@ U+GS75Ie6xBBb/kRuz4kruQXUgpw2p1HMqpLH0jKB2UvDVQLyAogaVd/300YQ6KH
 H3C4sj93exsmr16Sef0suwvJjZJZ+ivf+KPRxeJ3Nw7P2CWqdsUU/ANcjEzW5Aum
 lMfhiH/jx+vUNGAj35c/TPaBtEsG
 -----END CERTIFICATE-----`
+  }
 
   const buffer = Buffer.from(password)
   const encrypted = crypto.publicEncrypt(
     {
-      key: sandboxPublicKey,
+      key: publicKey,
       padding: crypto.constants.RSA_PKCS1_PADDING
     },
     buffer

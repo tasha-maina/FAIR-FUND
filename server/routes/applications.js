@@ -111,6 +111,29 @@ router.get('/', protect, async (req, res) => {
   }
 })
 
+// Admin-only: Get all applications with user details
+router.get('/admin/all', protect, async (req, res) => {
+  const caller = req.user
+  if (!caller || caller.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required' })
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT la.*, u.full_name, u.email, u.phone_number, u.national_id,
+              ef.checkout_request_id, ef.payment_status as fee_status, ef.amount as fee_amount
+       FROM loan_applications la
+       JOIN users u ON u.id = la.user_id
+       LEFT JOIN evaluation_fees ef ON ef.application_id = la.id
+       ORDER BY la.submitted_at DESC`
+    )
+    res.json(result.rows)
+  } catch (err) {
+    console.error('Fetch admin applications error', err)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // Admin-only review endpoint: set application status to 'approved' or 'rejected' with optional note
 router.patch('/:id/review', protect, async (req, res) => {
   const reviewer = req.user
@@ -152,8 +175,6 @@ router.patch('/:id/review', protect, async (req, res) => {
     return res.status(500).json({ message: 'Server error' })
   }
 })
-
-module.exports = router
 
 // Admin-only disbursement endpoint: send funds to applicant via M-Pesa B2C
 router.post('/:id/disburse', protect, async (req, res) => {
@@ -280,3 +301,5 @@ router.post('/:id/disburse', protect, async (req, res) => {
     return res.status(500).json({ message: 'Disbursement failed', error: err.response?.data || err.message })
   }
 })
+
+module.exports = router
