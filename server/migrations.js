@@ -86,6 +86,8 @@ const createTables = async () => {
     await pool.query(`ALTER TABLE evaluation_fees ADD COLUMN IF NOT EXISTS checkout_request_id VARCHAR(100)`)
     await pool.query(`ALTER TABLE loan_applications ADD COLUMN IF NOT EXISTS admin_note TEXT`)
     await pool.query(`ALTER TABLE loan_offers ADD COLUMN IF NOT EXISTS mpesa_transaction_id VARCHAR(100)`)
+    await pool.query(`ALTER TABLE repayments ADD COLUMN IF NOT EXISTS checkout_request_id VARCHAR(100)`)
+    await pool.query(`ALTER TABLE repayments ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'pending'`)
     process.exit()
   }
 }

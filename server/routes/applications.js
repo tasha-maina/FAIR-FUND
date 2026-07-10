@@ -100,13 +100,22 @@ router.get('/', protect, async (req, res) => {
 
   try {
     const applications = await pool.query(
-      'SELECT * FROM loan_applications WHERE user_id = $1 ORDER BY submitted_at DESC',
+      `SELECT la.*, 
+              cs.score_breakdown, cs.risk_level,
+              ef.payment_status AS fee_status, ef.amount AS fee_amount,
+              lo.id AS loan_offer_id, lo.approved_amount, lo.interest_rate, lo.repayment_months, lo.status AS loan_offer_status, lo.mpesa_transaction_id AS disbursement_tx_id
+       FROM loan_applications la
+       LEFT JOIN credit_scores cs ON cs.application_id = la.id
+       LEFT JOIN evaluation_fees ef ON ef.application_id = la.id
+       LEFT JOIN loan_offers lo ON lo.application_id = la.id
+       WHERE la.user_id = $1
+       ORDER BY la.submitted_at DESC`,
       [user_id]
     )
 
     res.json(applications.rows)
   } catch (err) {
-    console.error(err)
+    console.error('Fetch applications error:', err)
     res.status(500).json({ message: 'Server error' })
   }
 })
@@ -121,10 +130,14 @@ router.get('/admin/all', protect, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT la.*, u.full_name, u.email, u.phone_number, u.national_id,
-              ef.checkout_request_id, ef.payment_status as fee_status, ef.amount as fee_amount
+              ef.checkout_request_id, ef.payment_status as fee_status, ef.amount as fee_amount,
+              lo.id AS loan_offer_id, lo.status AS loan_offer_status,
+              (SELECT checkout_request_id FROM repayments WHERE loan_offer_id = lo.id ORDER BY paid_at DESC LIMIT 1) AS repayment_checkout_id,
+              (SELECT payment_status FROM repayments WHERE loan_offer_id = lo.id ORDER BY paid_at DESC LIMIT 1) AS repayment_status
        FROM loan_applications la
        JOIN users u ON u.id = la.user_id
        LEFT JOIN evaluation_fees ef ON ef.application_id = la.id
+       LEFT JOIN loan_offers lo ON lo.application_id = la.id
        ORDER BY la.submitted_at DESC`
     )
     res.json(result.rows)

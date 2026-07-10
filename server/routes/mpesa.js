@@ -36,54 +36,124 @@ const handleStkCallback = async (callbackData) => {
     CallbackMetadata
   } = callbackData
 
+  // 1. Check if it is an evaluation fee
   const feeResult = await pool.query(
     'SELECT id, application_id, payment_status FROM evaluation_fees WHERE checkout_request_id = $1',
     [CheckoutRequestID]
   )
 
-  if (feeResult.rows.length === 0) {
-    console.warn('Unknown CheckoutRequestID in callback:', CheckoutRequestID)
-    return { status: 'unknown' }
+  if (feeResult.rows.length > 0) {
+    const fee = feeResult.rows[0]
+    if (fee.payment_status === 'completed') {
+      return { status: 'already_completed' }
+    }
+
+    const items = Array.isArray(CallbackMetadata?.Item) ? CallbackMetadata.Item : []
+    const mpesaCode = items.find(i => i.Name === 'MpesaReceiptNumber')?.Value || null
+    const amount = items.find(i => i.Name === 'Amount')?.Value || null
+    const phone = items.find(i => i.Name === 'PhoneNumber')?.Value || null
+
+    if (ResultCode === 0) {
+      await pool.query(
+        `UPDATE evaluation_fees
+         SET payment_status = 'completed', mpesa_transaction_id = $1, paid_at = NOW()
+         WHERE id = $2`,
+        [mpesaCode, fee.id]
+      )
+
+      await pool.query(
+        `UPDATE loan_applications
+         SET status = 'under_review', updated_at = NOW()
+         WHERE id = $1`,
+        [fee.application_id]
+      )
+
+      return { status: 'completed', mpesaCode, amount, phone }
+    } else {
+      await pool.query(
+        `UPDATE evaluation_fees
+         SET payment_status = 'failed'
+         WHERE id = $1`,
+        [fee.id]
+      )
+
+      return { status: 'failed', ResultCode, ResultDesc }
+    }
   }
 
-  const fee = feeResult.rows[0]
-
-  if (fee.payment_status === 'completed') {
-    return { status: 'already_completed' }
-  }
-
-  const items = Array.isArray(CallbackMetadata?.Item) ? CallbackMetadata.Item : []
-  const mpesaCode = items.find(i => i.Name === 'MpesaReceiptNumber')?.Value || null
-  const amount = items.find(i => i.Name === 'Amount')?.Value || null
-  const phone = items.find(i => i.Name === 'PhoneNumber')?.Value || null
-
-  if (ResultCode === 0) {
-    await pool.query(
-      `UPDATE evaluation_fees
-       SET payment_status = 'completed', mpesa_transaction_id = $1, paid_at = NOW()
-       WHERE id = $2`,
-      [mpesaCode, fee.id]
-    )
-
-    await pool.query(
-      `UPDATE loan_applications
-       SET status = 'under_review', updated_at = NOW()
-       WHERE id = $1`,
-      [fee.application_id]
-    )
-
-    return { status: 'completed', mpesaCode, amount, phone }
-  }
-
-  // non-zero result code => failed
-  await pool.query(
-    `UPDATE evaluation_fees
-     SET payment_status = 'failed'
-     WHERE id = $1`,
-    [fee.id]
+  // 2. Check if it is a loan repayment
+  const repaymentResult = await pool.query(
+    'SELECT id, loan_offer_id, payment_status FROM repayments WHERE checkout_request_id = $1',
+    [CheckoutRequestID]
   )
 
-  return { status: 'failed', ResultCode, ResultDesc }
+  if (repaymentResult.rows.length > 0) {
+    const rep = repaymentResult.rows[0]
+    if (rep.payment_status === 'completed') {
+      return { status: 'already_completed' }
+    }
+
+    const items = Array.isArray(CallbackMetadata?.Item) ? CallbackMetadata.Item : []
+    const mpesaCode = items.find(i => i.Name === 'MpesaReceiptNumber')?.Value || null
+    const amount = items.find(i => i.Name === 'Amount')?.Value || null
+    const phone = items.find(i => i.Name === 'PhoneNumber')?.Value || null
+
+    if (ResultCode === 0) {
+      await pool.query(
+        `UPDATE repayments
+         SET payment_status = 'completed', mpesa_transaction_id = $1, paid_at = NOW()
+         WHERE id = $2`,
+        [mpesaCode, rep.id]
+      )
+
+      await pool.query(
+        `UPDATE loan_offers
+         SET status = 'repaid'
+         WHERE id = $1`,
+        [rep.loan_offer_id]
+      )
+
+      // Also get the application_id to update loan_applications status
+      const offerQuery = await pool.query('SELECT application_id FROM loan_offers WHERE id = $1', [rep.loan_offer_id])
+      if (offerQuery.rows.length > 0) {
+        const appId = offerQuery.rows[0].application_id
+        await pool.query(
+          `UPDATE loan_applications
+           SET status = 'repaid', updated_at = NOW()
+           WHERE id = $1`,
+          [appId]
+        )
+
+        // Notify user about successful repayment
+        try {
+          const appRes = await pool.query('SELECT user_id, loan_amount FROM loan_applications WHERE id = $1', [appId])
+          if (appRes.rows.length > 0) {
+            const { user_id, loan_amount } = appRes.rows[0]
+            await pool.query(
+              `INSERT INTO notifications (user_id, title, body, type)
+               VALUES ($1, $2, $3, $4)`,
+              [user_id, 'Loan Repaid Successfully', `Your loan of KES ${parseFloat(loan_amount).toLocaleString()} has been fully repaid. Thank you!`, 'repayment']
+            )
+          }
+        } catch (e) {
+          console.warn('Failed to notify repayment', e)
+        }
+      }
+
+      return { status: 'repayment_completed', mpesaCode, amount, phone }
+    } else {
+      await pool.query(
+        `UPDATE repayments
+         SET payment_status = 'failed', paid_at = NOW()
+         WHERE id = $1`,
+        [rep.id]
+      )
+      return { status: 'repayment_failed', ResultCode, ResultDesc }
+    }
+  }
+
+  console.warn('Unknown CheckoutRequestID in callback:', CheckoutRequestID)
+  return { status: 'unknown' }
 }
 
 const normalizePhoneNumber = (phoneNumber = '') => {
@@ -176,6 +246,84 @@ router.post('/stkpush', protect, async (req, res) => {
     return res.status(500).json({ message: 'M-Pesa request failed', error: err.response?.data || err.message })
   }
 })
+
+router.post('/repay', protect, async (req, res) => {
+  const { phone_number, loan_offer_id } = req.body
+
+  if (!loan_offer_id) {
+    return res.status(400).json({ message: 'loan_offer_id is required' })
+  }
+
+  try {
+    // 1. Verify loan offer exists and belongs to the current user
+    const offerRes = await pool.query(
+      `SELECT lo.id, lo.approved_amount, lo.status, la.user_id, la.id AS application_id
+       FROM loan_offers lo
+       JOIN loan_applications la ON la.id = lo.application_id
+       WHERE lo.id = $1 AND la.user_id = $2`,
+      [loan_offer_id, req.user.id]
+    )
+
+    if (offerRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Active loan offer not found' })
+    }
+
+    const offer = offerRes.rows[0]
+
+    if (offer.status === 'repaid') {
+      return res.status(400).json({ message: 'This loan has already been repaid' })
+    }
+
+    const amount = Math.ceil(parseFloat(offer.approved_amount))
+    const accessToken = await getAccessToken()
+
+    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
+    const password = Buffer.from(
+      `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
+    ).toString('base64')
+
+    const formattedPhone = normalizePhoneNumber(phone_number)
+
+    const response = await axios.post(
+      'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+      {
+        BusinessShortCode: process.env.MPESA_SHORTCODE,
+        Password: password,
+        Timestamp: timestamp,
+        TransactionType: 'CustomerPayBillOnline',
+        Amount: amount,
+        PartyA: formattedPhone,
+        PartyB: process.env.MPESA_SHORTCODE,
+        PhoneNumber: formattedPhone,
+        CallBackURL: process.env.MPESA_CALLBACK_URL,
+        AccountReference: loan_offer_id.slice(0, 20),
+        TransactionDesc: 'Loan repayment'
+      },
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    )
+
+    const { CheckoutRequestID } = response.data
+
+    if (CheckoutRequestID) {
+      await pool.query(
+        `INSERT INTO repayments (loan_offer_id, amount_paid, checkout_request_id, payment_status)
+         VALUES ($1, $2, $3, $4)`,
+        [loan_offer_id, amount, CheckoutRequestID, 'pending']
+      )
+    }
+
+    return res.status(200).json({
+      message: 'STK push sent to your phone',
+      data: response.data,
+      checkout_request_id: CheckoutRequestID || null
+    })
+
+  } catch (err) {
+    console.error(err.response?.data || err.message)
+    return res.status(500).json({ message: 'M-Pesa request failed', error: err.response?.data || err.message })
+  }
+})
+
 
 router.post('/callback', async (req, res) => {
   const callbackData = req.body?.Body?.stkCallback

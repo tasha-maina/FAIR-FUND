@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Notifications from './Notifications'
 
 const Navbar = () => {
   const { user, logout } = useAuth()
@@ -34,6 +35,8 @@ const Navbar = () => {
       </div>
 
       <div style={styles.profile}>
+        <Notifications />
+        <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--nav-border)', margin: '0 4px' }}></div>
         <div style={styles.avatar}>
           {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
         </div>
@@ -53,9 +56,8 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '1rem 2rem',
-    background: 'rgba(10, 22, 40, 0.85)',
-    backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+    background: 'var(--nav-bg)',
+    borderBottom: '1px solid var(--nav-border)',
     position: 'sticky',
     top: 0,
     zIndex: 1000,
@@ -66,10 +68,9 @@ const styles = {
   logo: {
     fontSize: '1.25rem',
     fontWeight: '800',
-    color: '#c9a84c',
+    color: '#ffffff',
     textDecoration: 'none',
-    letterSpacing: '0.05em',
-    textShadow: '0 0 10px rgba(201, 168, 76, 0.2)'
+    letterSpacing: '0.03em',
   },
   links: {
     display: 'flex',
@@ -77,32 +78,32 @@ const styles = {
     alignItems: 'center'
   },
   link: {
-    color: '#8892b0',
+    color: 'rgba(255, 255, 255, 0.75)',
     textDecoration: 'none',
     fontSize: '0.95rem',
     fontWeight: '500',
     transition: 'color 0.2s'
   },
   adminLink: {
-    color: '#c084fc',
+    color: '#ffffff',
     textDecoration: 'none',
     fontSize: '0.95rem',
     fontWeight: '600',
-    background: 'rgba(192, 132, 252, 0.1)',
+    background: 'rgba(255, 255, 255, 0.1)',
     padding: '0.35rem 0.75rem',
     borderRadius: '6px',
-    border: '1px solid rgba(192, 132, 252, 0.2)'
+    border: '1px solid rgba(255, 255, 255, 0.15)'
   },
   loginLink: {
-    color: '#c9a84c',
+    color: 'rgba(255, 255, 255, 0.85)',
     textDecoration: 'none',
     fontWeight: '600',
     marginRight: '1rem'
   },
   registerLink: {
     textDecoration: 'none',
-    background: '#c9a84c',
-    color: '#0a1628',
+    background: '#ffffff',
+    color: 'var(--brand)',
     padding: '0.5rem 1.2rem',
     borderRadius: '6px',
     fontWeight: '700'
@@ -116,8 +117,8 @@ const styles = {
     width: '36px',
     height: '36px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #c9a84c, #f0c96a)',
-    color: '#0a1628',
+    background: 'var(--brand-light)',
+    color: '#ffffff',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -125,20 +126,20 @@ const styles = {
     fontSize: '0.95rem'
   },
   name: {
-    color: '#f3f4f6',
+    color: '#ffffff',
     fontSize: '0.9rem',
     fontWeight: '600',
     lineHeight: '1.2'
   },
   role: {
-    color: '#8892b0',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: '0.75rem',
     lineHeight: '1.2'
   },
   logoutBtn: {
     background: 'transparent',
-    border: '1px solid rgba(255, 87, 87, 0.3)',
-    color: '#ff8a8a',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    color: 'rgba(255, 255, 255, 0.85)',
     padding: '0.4rem 0.8rem',
     borderRadius: '6px',
     fontSize: '0.85rem',

@@ -19,11 +19,11 @@ const Landing = () => {
 
           <div style={styles.heroVisual}>
             <div style={{width: '100%', maxWidth: 340}}>
-              <div style={{background: NAVY_LIGHT, padding: '1.5rem', borderRadius: 12}}>
+              <div style={{background: SURFACE_ALT, padding: '1.5rem', borderRadius: 12, border: '1px solid var(--border)'}}>
                 <div style={{display:'flex',flexDirection:'column',gap:12,alignItems:'center'}}>
-                  <div style={{width:80,height:80,borderRadius:18,background: GOLD}} />
-                  <div style={{width:'100%',height:12,background:'#0f2a46',borderRadius:6}} />
-                  <div style={{width:'100%',height:12,background:'#0f2a46',borderRadius:6}} />
+                  <div style={{width:80,height:80,borderRadius:18,background: BRAND}} />
+                  <div style={{width:'100%',height:12,background:'var(--border)',borderRadius:6}} />
+                  <div style={{width:'100%',height:12,background:'var(--border)',borderRadius:6}} />
                 </div>
               </div>
 
@@ -101,58 +101,60 @@ const Landing = () => {
   )
 }
 
-const NAVY = '#0a1628'
-const NAVY_LIGHT = '#112240'
-const GOLD = '#c9a84c'
-const GOLD_LIGHT = '#f0c96a'
+const BRAND = '#2c5530'
+const BRAND_LIGHT = '#3d7a45'
+const NAV_BG = '#1a2e1f'
+const SURFACE = '#ffffff'
+const SURFACE_ALT = '#f0eeea'
+const TEXT = '#1c1917'
+const MUTED = '#6b6560'
 const WHITE = '#ffffff'
-const GRAY = '#8892b0'
 
 const styles = {
-  container: { fontFamily: 'Inter, sans-serif', color: WHITE, backgroundColor: NAVY },
-  nav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 4rem', borderBottom: `1px solid ${NAVY_LIGHT}` },
-  logo: { fontSize: '1.5rem', fontWeight: '800', color: GOLD, margin: 0, letterSpacing: '0.05em' },
+  container: { fontFamily: 'Inter, sans-serif', color: TEXT, backgroundColor: 'var(--bg)' },
+  nav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 4rem', borderBottom: '1px solid var(--border)' },
+  logo: { fontSize: '1.5rem', fontWeight: '800', color: BRAND, margin: 0, letterSpacing: '0.03em' },
   navLinks: { display: 'flex', gap: '1rem', alignItems: 'center' },
-  loginBtn: { textDecoration: 'none', color: GOLD, fontWeight: '600' },
-  registerBtn: { textDecoration: 'none', backgroundColor: GOLD, color: NAVY, padding: '0.6rem 1.4rem', borderRadius: '8px', fontWeight: '700' },
-  badge: { backgroundColor: NAVY_LIGHT, color: GOLD, padding: '0.4rem 1rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', border: `1px solid ${GOLD}` },
-  heroTitle: { fontSize: '3.5rem', fontWeight: '800', lineHeight: '1.15', margin: '1.5rem 0', color: WHITE },
-  hero: { padding: '6rem 4rem', backgroundColor: NAVY, borderBottom: `1px solid ${NAVY_LIGHT}` },
+  loginBtn: { textDecoration: 'none', color: BRAND, fontWeight: '600' },
+  registerBtn: { textDecoration: 'none', backgroundColor: BRAND, color: WHITE, padding: '0.6rem 1.4rem', borderRadius: '8px', fontWeight: '700' },
+  badge: { backgroundColor: 'var(--brand-bg)', color: BRAND, padding: '0.4rem 1rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', border: '1px solid var(--brand-border)' },
+  heroTitle: { fontSize: '3.5rem', fontWeight: '800', lineHeight: '1.15', margin: '1.5rem 0', color: TEXT },
+  hero: { padding: '6rem 4rem', backgroundColor: 'var(--bg)', borderBottom: '1px solid var(--border)' },
   heroInner: { display: 'flex', gap: '2rem', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '1100px', margin: '0 auto' },
   heroContent: { flex: '1 1 60%', maxWidth: '700px' , textAlign: 'left' },
   heroVisual: { flex: '0 0 360px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  heroSubtitle: { fontSize: '1.1rem', color: GRAY, maxWidth: '500px', lineHeight: '1.7', margin: '0 auto' },
+  heroSubtitle: { fontSize: '1.1rem', color: MUTED, maxWidth: '500px', lineHeight: '1.7', margin: '0 auto' },
   heroBtns: { display: 'flex', gap: '1rem', marginTop: '2rem' },
   heroStats: { display: 'flex', gap: '2rem', alignItems: 'center', marginTop: '1rem', justifyContent: 'center', flexDirection: 'column' },
-  primaryBtn: { textDecoration: 'none', backgroundColor: GOLD, color: NAVY, padding: '0.9rem 2rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem' },
-  secondaryBtn: { textDecoration: 'none', border: `2px solid ${GOLD}`, color: GOLD, padding: '0.9rem 2rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem' },
+  primaryBtn: { textDecoration: 'none', backgroundColor: BRAND, color: WHITE, padding: '0.9rem 2rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem' },
+  secondaryBtn: { textDecoration: 'none', border: `2px solid ${BRAND}`, color: BRAND, padding: '0.9rem 2rem', borderRadius: '8px', fontWeight: '700', fontSize: '1rem' },
   stat: { display: 'flex', flexDirection: 'column' },
-  statNumber: { fontSize: '2rem', fontWeight: '800', color: GOLD },
-  statLabel: { fontSize: '0.85rem', color: GRAY },
-  statDivider: { width: '1px', height: '40px', backgroundColor: NAVY_LIGHT },
-  howItWorks: { padding: '5rem 4rem', backgroundColor: NAVY_LIGHT },
-  sectionTitle: { textAlign: 'center', fontSize: '2rem', fontWeight: '800', color: WHITE, marginBottom: '0.5rem' },
-  sectionSubtitle: { textAlign: 'center', color: GRAY, marginBottom: '3rem' },
+  statNumber: { fontSize: '2rem', fontWeight: '800', color: BRAND },
+  statLabel: { fontSize: '0.85rem', color: MUTED },
+  statDivider: { width: '1px', height: '40px', backgroundColor: 'var(--border)' },
+  howItWorks: { padding: '5rem 4rem', backgroundColor: SURFACE_ALT },
+  sectionTitle: { textAlign: 'center', fontSize: '2rem', fontWeight: '800', color: TEXT, marginBottom: '0.5rem' },
+  sectionSubtitle: { textAlign: 'center', color: MUTED, marginBottom: '3rem' },
   steps: { display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' },
   step: { flex: '1', minWidth: '150px', textAlign: 'center', padding: '1.5rem' },
-  stepNumber: { fontSize: '2.5rem', fontWeight: '800', color: GOLD },
-  stepTitle: { color: WHITE, marginBottom: '0.5rem' },
-  stepDesc: { color: GRAY, fontSize: '0.9rem' },
-  whyUs: { padding: '5rem 4rem', backgroundColor: NAVY },
+  stepNumber: { fontSize: '2.5rem', fontWeight: '800', color: BRAND },
+  stepTitle: { color: TEXT, marginBottom: '0.5rem' },
+  stepDesc: { color: MUTED, fontSize: '0.9rem' },
+  whyUs: { padding: '5rem 4rem', backgroundColor: 'var(--bg)' },
   cards: { display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '1rem' },
-  card: { flex: '1', minWidth: '220px', backgroundColor: NAVY_LIGHT, padding: '2rem', borderRadius: '12px', border: `1px solid #1e3a5f` },
-  cardAccent: { width: '40px', height: '4px', backgroundColor: GOLD, borderRadius: '2px', marginBottom: '1.2rem' },
-  cardTitle: { color: WHITE, marginBottom: '0.8rem', fontSize: '1.1rem' },
-  cardDesc: { color: GRAY, fontSize: '0.95rem', lineHeight: '1.6' },
-  cta: { padding: '5rem 4rem', backgroundColor: GOLD, textAlign: 'center' },
-  ctaTitle: { fontSize: '2.5rem', fontWeight: '800', color: NAVY, marginBottom: '1rem' },
-  ctaSubtitle: { color: NAVY, opacity: 0.8, marginBottom: '2rem' },
-  ctaBtn: { textDecoration: 'none', backgroundColor: NAVY, color: GOLD, padding: '1rem 2.5rem', borderRadius: '8px', fontWeight: '700', fontSize: '1.1rem' },
-  footer: { backgroundColor: NAVY_LIGHT, padding: '3rem 4rem', borderTop: `1px solid #1e3a5f` },
+  card: { flex: '1', minWidth: '220px', backgroundColor: SURFACE, padding: '2rem', borderRadius: '12px', border: '1px solid var(--border)' },
+  cardAccent: { width: '40px', height: '4px', backgroundColor: BRAND, borderRadius: '2px', marginBottom: '1.2rem' },
+  cardTitle: { color: TEXT, marginBottom: '0.8rem', fontSize: '1.1rem' },
+  cardDesc: { color: MUTED, fontSize: '0.95rem', lineHeight: '1.6' },
+  cta: { padding: '5rem 4rem', backgroundColor: NAV_BG, textAlign: 'center' },
+  ctaTitle: { fontSize: '2.5rem', fontWeight: '800', color: WHITE, marginBottom: '1rem' },
+  ctaSubtitle: { color: 'rgba(255,255,255,0.8)', marginBottom: '2rem' },
+  ctaBtn: { textDecoration: 'none', backgroundColor: WHITE, color: BRAND, padding: '1rem 2.5rem', borderRadius: '8px', fontWeight: '700', fontSize: '1.1rem' },
+  footer: { backgroundColor: SURFACE_ALT, padding: '3rem 4rem', borderTop: '1px solid var(--border)' },
   footerContent: { marginBottom: '1rem' },
-  footerLogo: { color: GOLD, fontSize: '1.2rem', margin: '0 0 0.3rem' },
-  footerTagline: { color: GRAY, fontSize: '0.9rem', margin: 0 },
-  footerCopy: { color: GRAY, fontSize: '0.85rem', margin: 0 },
+  footerLogo: { color: BRAND, fontSize: '1.2rem', margin: '0 0 0.3rem' },
+  footerTagline: { color: MUTED, fontSize: '0.9rem', margin: 0 },
+  footerCopy: { color: MUTED, fontSize: '0.85rem', margin: 0 },
 }
 
 export default Landing

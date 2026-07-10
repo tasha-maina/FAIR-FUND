@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import './dashboard.css'
 
 const Register = () => {
   const navigate = useNavigate()
@@ -21,7 +22,6 @@ const Register = () => {
       setError('Password must be at least 6 characters')
       return false
     }
-    // national ID required: digits only, 7-12 chars
     if (!form.national_id) {
       setError('National ID is required')
       return false
@@ -45,7 +45,6 @@ const Register = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          // normalize phone: allow 07XXXXXXXX -> 2547XXXXXXXX
           phone_number: form.phone_number.replace(/[^0-9]/g, '').replace(/^0/, '254')
         })
       })
@@ -57,7 +56,6 @@ const Register = () => {
         return
       }
 
-      // Persist auth and navigate to dashboard
       login(data.user, data.token)
       navigate('/dashboard')
     } catch (err) {
@@ -68,40 +66,49 @@ const Register = () => {
   }
 
   return (
-    <div style={styles.container}>
-      <form style={styles.form} onSubmit={handleSubmit}>
-        <h2 style={styles.title}>Create an account</h2>
-        {error && <div style={styles.error}>{error}</div>}
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)', padding: '2rem' }}>
+      <form onSubmit={handleSubmit} className="panel" style={{ width: '100%', maxWidth: 460, padding: '2.5rem' }}>
+        <h2 style={{ color: 'var(--brand)', margin: '0 0 0.5rem 0', textAlign: 'center' }}>Get Started</h2>
+        <p className="muted" style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '0.9rem' }}>Create a Fair Fund account to access credit</p>
+        
+        {error && <div style={{ color: 'var(--error)', background: 'var(--error-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid rgba(185, 28, 28, 0.2)', marginBottom: '1.25rem', fontSize: '0.9rem', textAlign: 'center' }}>{error}</div>}
 
-        <label style={styles.label}>Full name</label>
-        <input name="full_name" value={form.full_name} onChange={handleChange} style={styles.input} />
+        <div style={{ textAlign: 'left', marginBottom: '1rem' }}>
+          <label>Full Name *</label>
+          <input name="full_name" value={form.full_name} onChange={handleChange} placeholder="John Doe" required />
+        </div>
 
-        <label style={styles.label}>Email</label>
-        <input name="email" value={form.email} onChange={handleChange} style={styles.input} type="email" />
+        <div style={{ textAlign: 'left', marginBottom: '1rem' }}>
+          <label>Email Address *</label>
+          <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="john@example.com" required />
+        </div>
 
-        <label style={styles.label}>Phone number</label>
-        <input name="phone_number" value={form.phone_number} onChange={handleChange} style={styles.input} placeholder="07XXXXXXXX" />
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          <div style={{ textAlign: 'left', flex: '1 1 180px' }}>
+            <label>Phone Number (M-Pesa) *</label>
+            <input name="phone_number" value={form.phone_number} onChange={handleChange} placeholder="07XXXXXXXX" required />
+          </div>
+          <div style={{ textAlign: 'left', flex: '1 1 180px' }}>
+            <label>National ID *</label>
+            <input name="national_id" value={form.national_id} onChange={handleChange} placeholder="12345678" required />
+          </div>
+        </div>
 
-        <label style={styles.label}>National ID</label>
-        <input name="national_id" value={form.national_id} onChange={handleChange} style={styles.input} />
+        <div style={{ textAlign: 'left', marginBottom: '2rem' }}>
+          <label>Password *</label>
+          <input name="password" type="password" value={form.password} onChange={handleChange} placeholder="At least 6 characters" required />
+        </div>
 
-        <label style={styles.label}>Password</label>
-        <input name="password" value={form.password} onChange={handleChange} style={styles.input} type="password" />
+        <button type="submit" className="action-btn" style={{ width: '100%', padding: '0.85rem' }} disabled={loading}>
+          {loading ? 'Creating Account...' : 'Create Account'}
+        </button>
 
-        <button type="submit" style={styles.button} disabled={loading}>{loading ? 'Creating...' : 'Create account'}</button>
+        <p className="muted" style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem' }}>
+          Already have an account? <Link to="/login" style={{ color: 'var(--brand)', textDecoration: 'none', fontWeight: 600 }}>Sign in</Link>
+        </p>
       </form>
     </div>
   )
-}
-
-const styles = {
-  container: { display: 'flex', justifyContent: 'center', padding: '2rem' },
-  form: { width: '100%', maxWidth: 480, background: '#072033', padding: '1.5rem', borderRadius: 8, boxShadow: '0 6px 18px rgba(2,6,23,0.6)' },
-  title: { margin: 0, marginBottom: '1rem', color: '#c9a84c' },
-  label: { display: 'block', marginTop: '0.75rem', marginBottom: '0.35rem', color: '#8892b0' },
-  input: { width: '100%', padding: '0.6rem', borderRadius: 6, border: '1px solid rgba(255,255,255,0.06)', background: '#0b2a44', color: '#fff' },
-  button: { marginTop: '1rem', width: '100%', padding: '0.75rem', background: '#c9a84c', color: '#06242f', borderRadius: 8, fontWeight: 700, border: 'none' },
-  error: { background: 'rgba(255,0,0,0.07)', color: '#ff8a8a', padding: '0.6rem', borderRadius: 6, marginBottom: '0.75rem' }
 }
 
 export default Register

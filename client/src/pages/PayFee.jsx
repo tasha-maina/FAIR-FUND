@@ -47,12 +47,18 @@ const PayFee = () => {
   if (sent) {
     return (
       <div className="dashboard-root">
-        <div className="panel" style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ color: '#c9a84c' }}>Check your phone</h2>
-          <p className="muted">An M-Pesa prompt has been sent. Enter your PIN to complete the payment.</p>
-          <button className="primary-btn" style={{ marginTop: '1.5rem', border: 'none', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
-            Back to dashboard
-          </button>
+        <div className="panel" style={{ maxWidth: 480, margin: '2rem auto', textAlign: 'center', padding: '3rem 2rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
+          <h2 style={{ color: 'var(--brand)', margin: '0 0 1rem 0' }}>Check Your Phone</h2>
+          <p className="muted" style={{ lineHeight: '1.6', fontSize: '0.95rem' }}>
+            We've sent an M-Pesa STK payment request to <strong>{phone}</strong>.<br />
+            Please enter your M-Pesa PIN on your phone to authorize the fee.
+          </p>
+          <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button className="primary-btn" onClick={() => navigate('/dashboard')}>
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -60,22 +66,41 @@ const PayFee = () => {
 
   return (
     <div className="dashboard-root">
-      <form className="panel" onSubmit={handleSubmit} style={{ maxWidth: 480, margin: '0 auto' }}>
-        <h2 style={{ color: '#c9a84c' }}>Pay evaluation fee</h2>
-        <p className="muted">Enter the M-Pesa number to receive the payment prompt</p>
-        {error && <div style={{ color: '#ff8a8a', margin: '1rem 0' }}>{error}</div>}
+      <form className="panel" onSubmit={handleSubmit} style={{ maxWidth: 480, margin: '2rem auto', padding: '2.5rem' }}>
+        <h2 style={{ color: 'var(--brand)', margin: '0 0 0.5rem 0' }}>Pay Evaluation Fee</h2>
+        <p className="muted" style={{ marginBottom: '2rem', fontSize: '0.9rem' }}>
+          To initiate review of Application <strong>{applicationId.slice(0, 8)}</strong>, please pay the 5% evaluation fee via M-Pesa STK push.
+        </p>
 
-        <label className="muted" style={{ display: 'block', marginTop: '1rem' }}>Phone number</label>
-        <input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="07XXXXXXXX"
-          style={{ width: '100%', padding: '0.6rem', borderRadius: 6, border: '1px solid rgba(255,255,255,0.06)', background: '#0b2a44', color: '#fff', marginTop: '0.35rem' }}
-          required
-        />
+        {error && <div style={{ color: 'var(--error)', margin: '1rem 0', background: 'var(--error-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid rgba(185, 28, 28, 0.2)', fontSize: '0.9rem' }}>{error}</div>}
 
-        <button type="submit" className="action-btn" style={{ marginTop: '1.5rem', width: '100%', border: 'none', cursor: 'pointer' }} disabled={loading}>
-          {loading ? 'Sending request...' : 'Send payment request'}
+        <div style={{ textAlign: 'left' }}>
+          <label>M-Pesa Mobile Number</label>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="07XXXXXXXX"
+            required
+          />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>Format: 07XXXXXXXX or 2547XXXXXXXX</span>
+        </div>
+
+        <button 
+          type="submit" 
+          className="action-btn" 
+          style={{ marginTop: '2rem', width: '100%', padding: '0.85rem' }} 
+          disabled={loading}
+        >
+          {loading ? 'Sending Request...' : 'Send M-Pesa STK Push'}
+        </button>
+        
+        <button 
+          type="button" 
+          className="action-btn secondary" 
+          style={{ marginTop: '0.75rem', width: '100%', padding: '0.85rem' }}
+          onClick={() => navigate('/dashboard')}
+        >
+          Cancel
         </button>
       </form>
     </div>

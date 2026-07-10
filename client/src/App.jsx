@@ -24,10 +24,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Dashboard />
-              {user && <Notifications />}
-            </div>
+            <Dashboard />
           </ProtectedRoute>
         } />
         <Route path="/applications" element={
