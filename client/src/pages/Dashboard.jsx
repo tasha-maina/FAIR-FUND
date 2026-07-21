@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import './dashboard.css'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { isFeePaid, isStepDone, getProgressWidth } from './dashboardProgress.mjs'
 
 const Dashboard = () => {
   const { token, user, logout } = useAuth()
@@ -18,9 +19,9 @@ const Dashboard = () => {
   const [repayLoading, setRepayLoading] = useState(false)
   const [repayError, setRepayError] = useState(null)
   const [repaySuccess, setRepaySuccess] = useState(false)
-  const [repayPhone, setRepayPhone] = useState('')
+  const [repayPhone, setRepayPhone] = useState(user?.phone_number || '')
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!token) return
     setLoading(true)
     try {
@@ -57,29 +58,26 @@ const Dashboard = () => {
         { label: 'Fully Repaid', value: String(data.filter(d => d.status === 'repaid').length) },
       ])
     } catch (err) {
+      console.error('Fetch dashboard error:', err)
       setError('Failed to load data')
     } finally {
       setLoading(false)
     }
-  }
+  }, [token, logout, navigate])
 
   useEffect(() => {
     fetchData()
-  }, [token])
+  }, [fetchData])
 
   // Poll while evaluation fee payment may still be processing
   useEffect(() => {
     if (!latestApp || latestApp.fee_status === 'completed') return
     if (latestApp.status !== 'submitted') return
-    const interval = setInterval(fetchData, 5000)
+    const interval = setInterval(() => {
+      fetchData()
+    }, 5000)
     return () => clearInterval(interval)
-  }, [latestApp?.id, latestApp?.fee_status, latestApp?.status, token])
-
-  useEffect(() => {
-    if (user && user.phone_number) {
-      setRepayPhone(user.phone_number)
-    }
-  }, [user])
+  }, [latestApp, fetchData])
 
   const handleRepaySubmit = async (e) => {
     e.preventDefault()
@@ -112,35 +110,11 @@ const Dashboard = () => {
       // Check for status updates
       setTimeout(() => fetchData(), 5000)
     } catch (err) {
+      console.error('Repayment submit error:', err)
       setRepayError('Network error')
     } finally {
       setRepayLoading(false)
     }
-  }
-
-  const isFeePaid = (app) =>
-    app?.fee_status === 'completed' ||
-    ['under_review', 'approved', 'disbursed', 'repaid'].includes(app?.status)
-
-  const isStepDone = (app, step) => {
-    if (!app) return false
-    if (step === 'fee') return isFeePaid(app)
-    if (step === 'review') {
-      return app.status === 'approved' || app.status === 'disbursed' || app.status === 'repaid'
-    }
-    if (step === 'disburse') {
-      return app.status === 'disbursed' || app.status === 'repaid'
-    }
-    return false
-  }
-
-  const getProgressWidth = (app) => {
-    if (!app) return '0%'
-    if (app.status === 'disbursed' || app.status === 'repaid') return '100%'
-    if (app.status === 'approved') return '66.66%'
-    if (app.status === 'under_review') return '33.33%'
-    if (isFeePaid(app)) return '33.33%'
-    return '0%'
   }
 
   const needsFeePayment = (app) =>

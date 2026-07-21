@@ -113,7 +113,14 @@ router.get('/', protect, async (req, res) => {
       [user_id]
     )
 
-    res.json(applications.rows)
+    const normalizedApplications = applications.rows.map((application) => ({
+      ...application,
+      status: application.fee_status === 'completed' && application.status === 'submitted'
+        ? 'under_review'
+        : application.status
+    }))
+
+    res.json(normalizedApplications)
   } catch (err) {
     console.error('Fetch applications error:', err)
     res.status(500).json({ message: 'Server error' })
