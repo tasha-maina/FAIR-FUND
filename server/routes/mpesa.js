@@ -374,6 +374,68 @@ router.get('/status/:checkout', protect, async (req, res) => {
   }
 })
 
+// Endpoint to check the latest evaluation fee status for a specific application
+router.get('/application-status/:applicationId', protect, async (req, res) => {
+  const { applicationId } = req.params
+
+  try {
+    const result = await pool.query(
+      `SELECT ef.payment_status, ef.checkout_request_id, la.status AS application_status
+       FROM evaluation_fees ef
+       JOIN loan_applications la ON la.id = ef.application_id
+       WHERE ef.application_id = $1`,
+      [applicationId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Application fee record not found' })
+    }
+
+    return res.json(result.rows[0])
+  } catch (err) {
+    console.error('Application fee status error', err)
+    return res.status(500).json({ message: 'Server error' })
+  }
+})
+
+router.post('/confirm-payment', protect, async (req, res) => {
+  const { application_id } = req.body
+
+  if (!application_id) {
+    return res.status(400).json({ message: 'application_id is required' })
+  }
+
+  try {
+    const ownership = await pool.query(
+      `SELECT id FROM loan_applications WHERE id = $1 AND user_id = $2`,
+      [application_id, req.user.id]
+    )
+
+    if (ownership.rows.length === 0) {
+      return res.status(404).json({ message: 'Application not found' })
+    }
+
+    await pool.query(
+      `UPDATE evaluation_fees
+       SET payment_status = 'completed', mpesa_transaction_id = 'manual-confirmation', paid_at = NOW()
+       WHERE application_id = $1`,
+      [application_id]
+    )
+
+    await pool.query(
+      `UPDATE loan_applications
+       SET status = 'under_review', updated_at = NOW()
+       WHERE id = $1`,
+      [application_id]
+    )
+
+    return res.json({ ok: true, message: 'Payment confirmed' })
+  } catch (err) {
+    console.error('Confirm payment error', err)
+    return res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // Admin-only disbursement endpoint: send funds to applicant via M-Pesa B2C
 router.post('/disburse', protect, async (req, res) => {
   const caller = req.user

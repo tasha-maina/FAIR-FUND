@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './dashboard.css'
@@ -10,8 +10,87 @@ const PayFee = () => {
 
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
+  const [checkingStatus, setCheckingStatus] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState(null)
   const [sent, setSent] = useState(false)
+  const [statusMessage, setStatusMessage] = useState('')
+
+  const checkPaymentStatus = async () => {
+    if (!applicationId) return
+
+    setCheckingStatus(true)
+    setError(null)
+    setStatusMessage('Checking your payment status...')
+
+    try {
+      const res = await fetch(`/api/mpesa/application-status/${applicationId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setStatusMessage(data.message || 'Unable to check payment status')
+        return
+      }
+
+      if (data.payment_status === 'completed') {
+        setStatusMessage('Payment received. Your application is now moving to review.')
+        navigate('/dashboard', { replace: true })
+      } else {
+        setStatusMessage('Still waiting for confirmation. Please complete the M-Pesa prompt on your phone.')
+      }
+    } catch (err) {
+      console.error('Status check error:', err)
+      setStatusMessage('Unable to check payment status right now.')
+    } finally {
+      setCheckingStatus(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!sent || !applicationId) return
+
+    const interval = setInterval(() => {
+      checkPaymentStatus()
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [sent, applicationId, token])
+
+  const handleConfirmPayment = async () => {
+    if (!applicationId) return
+
+    setConfirming(true)
+    setError(null)
+    setStatusMessage('Confirming your payment...')
+
+    try {
+      const res = await fetch('/api/mpesa/confirm-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ application_id: applicationId })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setStatusMessage(data.message || 'Could not confirm payment')
+        return
+      }
+
+      setStatusMessage('Payment confirmed. Your application is now moving to review.')
+      setTimeout(() => navigate('/dashboard', { replace: true }), 600)
+    } catch (err) {
+      console.error('Confirm payment error:', err)
+      setStatusMessage('Could not confirm payment right now.')
+    } finally {
+      setConfirming(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -38,6 +117,7 @@ const PayFee = () => {
 
       setSent(true)
     } catch (err) {
+      console.error('Pay fee error:', err)
       setError('Network error')
     } finally {
       setLoading(false)
@@ -54,8 +134,18 @@ const PayFee = () => {
             We've sent an M-Pesa STK payment request to <strong>{phone}</strong>.<br />
             Please enter your M-Pesa PIN on your phone to authorize the fee.
           </p>
-          <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <button className="primary-btn" onClick={() => navigate('/dashboard')}>
+          {statusMessage && (
+            <div style={{ marginTop: '1rem', color: 'var(--brand)', fontWeight: 600 }}>{statusMessage}</div>
+          )}
+
+          <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button className="primary-btn" onClick={handleConfirmPayment} disabled={confirming}>
+              {confirming ? 'Confirming...' : 'I Paid the Fee'}
+            </button>
+            <button className="primary-btn" onClick={checkPaymentStatus} disabled={checkingStatus}>
+              {checkingStatus ? 'Checking...' : 'Check Payment Status'}
+            </button>
+            <button className="secondary-btn" onClick={() => navigate('/dashboard')}>
               Back to Dashboard
             </button>
           </div>

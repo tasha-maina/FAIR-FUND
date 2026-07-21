@@ -69,6 +69,17 @@ const Dashboard = () => {
     fetchData()
   }, [fetchData])
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [fetchData])
+
   // Poll while evaluation fee payment may still be processing
   useEffect(() => {
     if (!latestApp || latestApp.fee_status === 'completed') return
