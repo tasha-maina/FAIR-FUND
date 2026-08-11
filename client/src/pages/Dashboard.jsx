@@ -23,7 +23,6 @@ const Dashboard = () => {
 
   const fetchData = useCallback(async () => {
     if (!token) return
-    setLoading(true)
     try {
       const res = await fetch('/api/applications', { headers: { Authorization: `Bearer ${token}` } })
       if (res.status === 401) {
@@ -66,8 +65,54 @@ const Dashboard = () => {
   }, [token, logout, navigate])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    let ignore = false
+    const load = async () => {
+      if (!token) return
+      try {
+        const res = await fetch('/api/applications', { headers: { Authorization: `Bearer ${token}` } })
+        if (res.status === 401) {
+          logout()
+          navigate('/login')
+          return
+        }
+        const data = await res.json()
+        if (ignore) return
+        
+        const unpaid = data.find(a => a.status === 'submitted' && a.fee_status !== 'completed')
+        setPendingFeeAppId(unpaid ? unpaid.id : null)
+
+        if (data.length > 0) {
+          setLatestApp(data[0])
+        } else {
+          setLatestApp(null)
+        }
+
+        setRecent(data.slice(0, 5).map(a => ({ 
+          id: a.id, 
+          title: `Application ${a.id.slice(0, 8)} - ${a.status}`, 
+          date: a.updated_at || a.submitted_at || '', 
+          amount: `KES ${parseFloat(a.loan_amount).toLocaleString()}`, 
+          status: a.status,
+          fee_status: a.fee_status
+        })))
+        
+        setStats([
+          { label: 'Applications', value: String(data.length) },
+          { label: 'Approved', value: String(data.filter(d => d.status === 'approved' || d.status === 'disbursed' || d.status === 'repaid').length) },
+          { label: 'Fully Repaid', value: String(data.filter(d => d.status === 'repaid').length) },
+        ])
+      } catch (err) {
+        if (!ignore) {
+          console.error('Fetch dashboard error:', err)
+          setError('Failed to load data')
+        }
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    load()
+    return () => { ignore = true }
+  }, [token, logout, navigate])
 
   useEffect(() => {
     const handleVisibilityChange = () => {

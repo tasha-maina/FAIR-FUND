@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import API from '../api/axios'
 
 const AuthContext = createContext()
 
@@ -18,22 +19,15 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
-        if (!res.ok) {
-          // token invalid or expired
-          setUser(null)
-          setToken(null)
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
-          setLoading(false)
-          return
-        }
-
-        const data = await res.json()
-        setUser(data.user)
-        localStorage.setItem('user', JSON.stringify(data.user))
+        const res = await API.get('/auth/me')
+        setUser(res.data.user)
+        localStorage.setItem('user', JSON.stringify(res.data.user))
       } catch (err) {
         console.error('Error fetching profile', err)
+        setUser(null)
+        setToken(null)
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
       } finally {
         setLoading(false)
       }
@@ -63,4 +57,5 @@ export const AuthProvider = ({ children }) => {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext)

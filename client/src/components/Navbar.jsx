@@ -56,8 +56,8 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '1rem 2rem',
-    background: 'var(--nav-bg)',
-    borderBottom: '1px solid var(--nav-border)',
+    background: 'linear-gradient(90deg, #132818 0%, #1d3924 100%)',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
     position: 'sticky',
     top: 0,
     zIndex: 1000,
@@ -78,10 +78,10 @@ const styles = {
     alignItems: 'center'
   },
   link: {
-    color: 'rgba(255, 255, 255, 0.75)',
+    color: 'rgba(255, 255, 255, 0.78)',
     textDecoration: 'none',
     fontSize: '0.95rem',
-    fontWeight: '500',
+    fontWeight: '600',
     transition: 'color 0.2s'
   },
   adminLink: {
@@ -137,11 +137,11 @@ const styles = {
     lineHeight: '1.2'
   },
   logoutBtn: {
-    background: 'transparent',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    color: 'rgba(255, 255, 255, 0.85)',
-    padding: '0.4rem 0.8rem',
-    borderRadius: '6px',
+    background: 'rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.16)',
+    color: 'rgba(255, 255, 255, 0.9)',
+    padding: '0.45rem 0.8rem',
+    borderRadius: '999px',
     fontSize: '0.85rem',
     fontWeight: '600',
     cursor: 'pointer',

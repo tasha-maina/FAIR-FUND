@@ -102,7 +102,6 @@ const Landing = () => {
 }
 
 const BRAND = '#2c5530'
-const BRAND_LIGHT = '#3d7a45'
 const NAV_BG = '#1a2e1f'
 const SURFACE = '#ffffff'
 const SURFACE_ALT = '#f0eeea'

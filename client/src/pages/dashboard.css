@@ -9,8 +9,10 @@ body {
 
 .dashboard-root {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1240px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .dash-header h1 {
@@ -27,8 +29,9 @@ body {
 }
 
 .dash-stats {
-  display: flex;
-  gap: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
   margin-top: 1.5rem;
 }
 
@@ -68,6 +71,7 @@ body {
   display: flex;
   gap: 1.5rem;
   margin-top: 1.5rem;
+  align-items: flex-start;
 }
 
 .dash-left {
@@ -86,10 +90,10 @@ body {
 
 .panel {
   background: var(--surface);
-  padding: 1.75rem;
-  border-radius: 12px;
+  padding: 1.5rem;
+  border-radius: 16px;
   border: 1px solid var(--border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
 }
 
 .panel h3 {
@@ -258,16 +262,44 @@ body {
 }
 
 .activity-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 0;
   border-bottom: 1px solid var(--border);
-  transition: background-color 0.2s;
+  padding: 0.8rem 0;
 }
 
 .activity-item:last-child {
   border-bottom: none;
+}
+
+@media (max-width: 900px) {
+  .dash-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-main {
+    flex-direction: column;
+  }
+
+  .dashboard-root {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-root {
+    padding: 1rem;
+  }
+
+  .panel {
+    padding: 1.1rem;
+  }
+
+  .progress-stepper {
+    padding: 0;
+  }
+
+  .progress-step-label {
+    font-size: 0.72rem;
+  }
 }
 
 .activity-title {

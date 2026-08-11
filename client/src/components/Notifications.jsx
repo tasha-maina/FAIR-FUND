@@ -21,7 +21,9 @@ const Notifications = () => {
       const res = await fetch(`/api/notifications/${id}/read`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
       if (!res.ok) return
       setItems(items.map(it => it.id === id ? { ...it, read: true } : it))
-    } catch (e) {}
+    } catch (e) {
+      console.error('Mark notification read error:', e)
+    }
   }
 
   return (

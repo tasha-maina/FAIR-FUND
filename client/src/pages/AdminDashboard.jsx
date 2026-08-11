@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import './dashboard.css'
+
+const getSimReceipt = (prefix) => `${prefix}_${Date.now().toString(36).toUpperCase()}`
 
 const AdminDashboard = () => {
   const { token } = useAuth()
@@ -16,9 +18,8 @@ const AdminDashboard = () => {
   // UI filter state
   const [activeTab, setActiveTab] = useState('all')
 
-  const fetchApps = async () => {
+  const fetchApps = useCallback(async () => {
     if (!token) return
-    setLoading(true)
     try {
       const res = await fetch('/api/applications/admin/all', {
         headers: { Authorization: `Bearer ${token}` }
@@ -31,10 +32,27 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
 
   useEffect(() => {
-    fetchApps()
+    let ignore = false
+    const load = async () => {
+      if (!token) return
+      try {
+        const res = await fetch('/api/applications/admin/all', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (!res.ok) throw new Error('Failed to load applications')
+        const data = await res.json()
+        if (!ignore) setApps(data)
+      } catch (e) {
+        if (!ignore) setError(e.message || 'Could not load data')
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    load()
+    return () => { ignore = true }
   }, [token])
 
   const handleReviewSubmit = async (e) => {
@@ -61,6 +79,7 @@ const AdminDashboard = () => {
       setReviewNote('')
       fetchApps()
     } catch (err) {
+      console.error('Review submit error:', err)
       alert('Network error')
     }
   }
@@ -83,6 +102,7 @@ const AdminDashboard = () => {
       alert(`Disbursement successful! M-Pesa Transaction ID: ${data.mpesa_transaction_id}`)
       fetchApps()
     } catch (err) {
+      console.error('Disbursement error:', err)
       alert('Disbursement network error')
     }
   }
@@ -92,6 +112,8 @@ const AdminDashboard = () => {
       alert('No checkout request ID found. Please prompt the user to pay first.')
       return
     }
+
+    const receiptNum = getSimReceipt('SIM')
 
     try {
       const res = await fetch('/api/mpesa/simulate-callback', {
@@ -108,7 +130,7 @@ const AdminDashboard = () => {
             CallbackMetadata: {
               Item: [
                 { Name: 'Amount', Value: app.fee_amount || 50 },
-                { Name: 'MpesaReceiptNumber', Value: `SIM_${Math.random().toString(36).substr(2, 8).toUpperCase()}` },
+                { Name: 'MpesaReceiptNumber', Value: receiptNum },
                 { Name: 'PhoneNumber', Value: app.phone_number }
               ]
             }
@@ -130,6 +152,8 @@ const AdminDashboard = () => {
       return
     }
 
+    const receiptNum = getSimReceipt('SIM_REP')
+
     try {
       const res = await fetch('/api/mpesa/simulate-callback', {
         method: 'POST',
@@ -145,7 +169,7 @@ const AdminDashboard = () => {
             CallbackMetadata: {
               Item: [
                 { Name: 'Amount', Value: app.loan_amount },
-                { Name: 'MpesaReceiptNumber', Value: `SIM_REP_${Math.random().toString(36).substr(2, 8).toUpperCase()}` },
+                { Name: 'MpesaReceiptNumber', Value: receiptNum },
                 { Name: 'PhoneNumber', Value: app.phone_number }
               ]
             }

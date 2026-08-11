@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import API from '../api/axios'
 import './dashboard.css'
 
 const Login = () => {
@@ -17,22 +18,11 @@ const Login = () => {
     setError(null)
     setLoading(true)
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.message || 'Login failed')
-        setLoading(false)
-        return
-      }
-
-      login(data.user, data.token)
+      const res = await API.post('/auth/login', { email, password })
+      login(res.data.user, res.data.token)
       navigate('/dashboard')
     } catch (err) {
-      setError('Network error')
+      setError(err.response?.data?.message || 'Login failed')
     } finally { setLoading(false) }
   }
 

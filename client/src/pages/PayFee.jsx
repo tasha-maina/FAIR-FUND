@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './dashboard.css'
@@ -16,7 +16,7 @@ const PayFee = () => {
   const [sent, setSent] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
 
-  const checkPaymentStatus = async () => {
+  const checkPaymentStatus = useCallback(async () => {
     if (!applicationId) return
 
     setCheckingStatus(true)
@@ -46,7 +46,7 @@ const PayFee = () => {
     } finally {
       setCheckingStatus(false)
     }
-  }
+  }, [applicationId, token, navigate])
 
   useEffect(() => {
     if (!sent || !applicationId) return
@@ -56,7 +56,7 @@ const PayFee = () => {
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [sent, applicationId, token])
+  }, [sent, applicationId, checkPaymentStatus])
 
   const handleConfirmPayment = async () => {
     if (!applicationId) return

@@ -5,15 +5,12 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
-import Notifications from './components/Notifications'
-import { useAuth } from './context/AuthContext'
 import Applications from './pages/Applications'
 import DevQuickLogin from './components/DevQuickLogin'
 import PayFee from './pages/PayFee'
 import Navbar from './components/Navbar'
 
 function App() {
-  const { user } = useAuth()
   return (
     <>
       <DevQuickLogin />

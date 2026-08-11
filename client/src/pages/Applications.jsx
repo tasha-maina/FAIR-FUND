@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import './dashboard.css'
@@ -20,20 +20,40 @@ const Applications = () => {
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [paymentError, setPaymentError] = useState(null)
 
-  const fetchApps = async () => {
+  const fetchApps = useCallback(async () => {
     if (!token) return
-    setLoading(true)
     try {
       const res = await fetch('/api/applications', { headers: { Authorization: `Bearer ${token}` } })
       if (!res.ok) throw new Error('Failed')
       const data = await res.json()
       setApps(data)
     } catch (e) {
+      console.error('Fetch applications error:', e)
       setError('Could not load applications')
     } finally { setLoading(false) }
-  }
+  }, [token])
 
-  useEffect(() => { fetchApps() }, [token])
+  useEffect(() => {
+    let ignore = false
+    const load = async () => {
+      if (!token) return
+      try {
+        const res = await fetch('/api/applications', { headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) throw new Error('Failed')
+        const data = await res.json()
+        if (!ignore) setApps(data)
+      } catch (e) {
+        if (!ignore) {
+          console.error('Fetch applications error:', e)
+          setError('Could not load applications')
+        }
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+    load()
+    return () => { ignore = true }
+  }, [token])
 
   const handleChange = (e) => setForm({ 
     ...form, 
@@ -74,6 +94,7 @@ const Applications = () => {
       })
       await fetchApps()
     } catch (err) {
+      console.error('Application submit error:', err)
       setError('Network error')
     }
   }
@@ -122,6 +143,7 @@ const Applications = () => {
       // Navigate to pay confirmation screen or back to dashboard
       navigate(`/pay/${unpaidApp.id}`)
     } catch (err) {
+      console.error('Payment initiation error:', err)
       setPaymentError('Network error initiating payment')
       setPaymentLoading(false)
     }

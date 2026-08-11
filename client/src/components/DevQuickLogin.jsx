@@ -1,5 +1,3 @@
-import React from 'react'
-
 const DEV_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNhNzFmYTg2LWM3MjItNGI5Yi1hZGYyLTY0OTVlOGMyODk1NSIsInJvbGUiOiJhcHBsaWNhbnQiLCJpYXQiOjE3ODIyNDkyNzksImV4cCI6MTc4Mjg1NDA3OX0.k4wSk0oaBLoOAIgMXeGUYcbyc13O3ywp9Y4ldDMDNuk'
 
 const DevQuickLogin = () => {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import API from '../api/axios'
 import './dashboard.css'
 
 const Register = () => {
@@ -40,26 +41,15 @@ const Register = () => {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          phone_number: form.phone_number.replace(/[^0-9]/g, '').replace(/^0/, '254')
-        })
+      const res = await API.post('/auth/register', {
+        ...form,
+        phone_number: form.phone_number.replace(/[^0-9]/g, '').replace(/^0/, '254')
       })
 
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.message || 'Registration failed')
-        setLoading(false)
-        return
-      }
-
-      login(data.user, data.token)
+      login(res.data.user, res.data.token)
       navigate('/dashboard')
     } catch (err) {
-      setError('Network error')
+      setError(err.response?.data?.message || 'Registration failed')
     } finally {
       setLoading(false)
     }
