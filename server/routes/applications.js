@@ -102,7 +102,7 @@ router.get('/', protect, async (req, res) => {
     const applications = await pool.query(
       `SELECT la.*, 
               cs.score_breakdown, cs.risk_level,
-              ef.payment_status AS fee_status, ef.amount AS fee_amount,
+              ef.payment_status AS fee_status, ef.amount AS fee_amount, ef.mpesa_transaction_id AS fee_receipt, ef.paid_at AS fee_paid_at,
               lo.id AS loan_offer_id, lo.approved_amount, lo.interest_rate, lo.repayment_months, lo.status AS loan_offer_status, lo.mpesa_transaction_id AS disbursement_tx_id
        FROM loan_applications la
        LEFT JOIN credit_scores cs ON cs.application_id = la.id
@@ -138,6 +138,7 @@ router.get('/admin/all', protect, async (req, res) => {
     const result = await pool.query(
       `SELECT la.*, u.full_name, u.email, u.phone_number, u.national_id,
               ef.checkout_request_id, ef.payment_status as fee_status, ef.amount as fee_amount,
+              ef.mpesa_transaction_id as fee_receipt, ef.paid_at as fee_paid_at,
               lo.id AS loan_offer_id, lo.status AS loan_offer_status,
               (SELECT checkout_request_id FROM repayments WHERE loan_offer_id = lo.id ORDER BY paid_at DESC LIMIT 1) AS repayment_checkout_id,
               (SELECT payment_status FROM repayments WHERE loan_offer_id = lo.id ORDER BY paid_at DESC LIMIT 1) AS repayment_status

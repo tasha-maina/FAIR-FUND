@@ -18,27 +18,90 @@ const Landing = () => {
           </div>
 
           <div style={styles.heroVisual}>
-            <div style={{width: '100%', maxWidth: 340}}>
-              <div style={{background: SURFACE_ALT, padding: '1.5rem', borderRadius: 12, border: '1px solid var(--border)'}}>
-                <div style={{display:'flex',flexDirection:'column',gap:12,alignItems:'center'}}>
-                  <div style={{width:80,height:80,borderRadius:18,background: BRAND}} />
-                  <div style={{width:'100%',height:12,background:'var(--border)',borderRadius:6}} />
-                  <div style={{width:'100%',height:12,background:'var(--border)',borderRadius:6}} />
+            <div style={{ width: '100%', maxWidth: 360 }}>
+              <div style={{
+                background: SURFACE,
+                padding: '1.75rem',
+                borderRadius: 16,
+                border: '1px solid var(--border)',
+                boxShadow: '0 20px 40px rgba(44, 85, 48, 0.12)',
+                textAlign: 'left'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    color: BRAND,
+                    background: 'var(--brand-bg)',
+                    padding: '0.25rem 0.6rem',
+                    borderRadius: 20,
+                    letterSpacing: '0.04em'
+                  }}>
+                    M-Pesa Verified
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16a34a' }}></span> Instant STK
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '0.8rem', color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Approved Credit Limit
+                </div>
+                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: BRAND, margin: '4px 0 1rem 0', letterSpacing: '-0.02em' }}>
+                  KES 25,000
+                </div>
+
+                <div style={{
+                  background: SURFACE_ALT,
+                  borderRadius: 10,
+                  padding: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  fontSize: '0.85rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: MUTED }}>Credit Score</span>
+                    <span style={{ fontWeight: 800, color: '#16a34a' }}>88 / 100 (Low Risk)</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: MUTED }}>Evaluation Fee</span>
+                    <span style={{ fontWeight: 800, color: '#16a34a', background: 'rgba(22, 163, 74, 0.12)', padding: '0.1rem 0.4rem', borderRadius: 4 }}>
+                      KES 1,250 (PAID ✓)
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: MUTED }}>Disbursement</span>
+                    <span style={{ fontWeight: 700, fontFamily: 'monospace' }}>M-Pesa 07•• ••• 42</span>
+                  </div>
+                </div>
+
+                <div style={{
+                  marginTop: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: '0.8rem',
+                  color: BRAND,
+                  fontWeight: 700
+                }}>
+                  <span style={{ fontSize: '1.1rem' }}>⚡</span> Funds disbursed natively to Safaricom M-Pesa
                 </div>
               </div>
 
-              <div style={{marginTop:18,display:'flex',justifyContent:'space-between'}}>
-                <div style={{textAlign:'center'}}>
+              <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ textAlign: 'center' }}>
                   <div style={styles.statNumber}>5%</div>
                   <div style={styles.statLabel}>Evaluation Fee</div>
                 </div>
-                <div style={{textAlign:'center'}}>
+                <div style={{ textAlign: 'center' }}>
                   <div style={styles.statNumber}>100</div>
                   <div style={styles.statLabel}>Max Score</div>
                 </div>
-                <div style={{textAlign:'center'}}>
-                  <div style={styles.statNumber}>24hr</div>
-                  <div style={styles.statLabel}>Review</div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={styles.statNumber}>Instant</div>
+                  <div style={styles.statLabel}>STK Push</div>
                 </div>
               </div>
             </div>

@@ -44,11 +44,14 @@ const Dashboard = () => {
       // applications list -> build simple stats and recent activity
       setRecent(data.slice(0, 5).map(a => ({ 
         id: a.id, 
-        title: `Application ${a.id.slice(0, 8)} - ${a.status}`, 
+        title: `Application ${a.id.slice(0, 8).toUpperCase()}`, 
+        purpose: a.purpose,
         date: a.updated_at || a.submitted_at || '', 
         amount: `KES ${parseFloat(a.loan_amount).toLocaleString()}`, 
         status: a.status,
-        fee_status: a.fee_status
+        fee_status: a.fee_status,
+        fee_amount: a.fee_amount,
+        fee_receipt: a.fee_receipt
       })))
       
       setStats([
@@ -89,11 +92,14 @@ const Dashboard = () => {
 
         setRecent(data.slice(0, 5).map(a => ({ 
           id: a.id, 
-          title: `Application ${a.id.slice(0, 8)} - ${a.status}`, 
+          title: `Application ${a.id.slice(0, 8).toUpperCase()}`, 
+          purpose: a.purpose,
           date: a.updated_at || a.submitted_at || '', 
           amount: `KES ${parseFloat(a.loan_amount).toLocaleString()}`, 
           status: a.status,
-          fee_status: a.fee_status
+          fee_status: a.fee_status,
+          fee_amount: a.fee_amount,
+          fee_receipt: a.fee_receipt
         })))
         
         setStats([
@@ -208,8 +214,51 @@ const Dashboard = () => {
               {/* Application Progress visualizer */}
               {latestApp && (
                 <div className="panel" style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ margin: 0 }}>Active Application Progress</h3>
-                  <p className="muted" style={{ fontSize: '0.85rem' }}>Track the lifecycle of your current loan request</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: '1rem' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--brand)' }}>
+                        Active Loan Application ({latestApp.id.slice(0, 8).toUpperCase()})
+                      </h3>
+                      <p className="muted" style={{ fontSize: '0.85rem', marginTop: 4 }}>
+                        KES {parseFloat(latestApp.loan_amount).toLocaleString()} • {latestApp.purpose || 'General Loan'}
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      {isFeePaid(latestApp) ? (
+                        <span style={{
+                          background: 'var(--success-bg)',
+                          color: 'var(--success)',
+                          border: '1px solid rgba(45, 122, 62, 0.25)',
+                          padding: '0.3rem 0.8rem',
+                          borderRadius: 20,
+                          fontWeight: 700,
+                          fontSize: '0.8rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6
+                        }}>
+                          <span>✓</span> Evaluation Fee: PAID {latestApp.fee_amount ? `(KES ${parseFloat(latestApp.fee_amount).toLocaleString()})` : ''}
+                        </span>
+                      ) : (
+                        <Link to={`/pay/${latestApp.id}`} style={{
+                          background: 'var(--warning-bg)',
+                          color: 'var(--warning)',
+                          border: '1px solid rgba(180, 83, 9, 0.3)',
+                          padding: '0.35rem 0.85rem',
+                          borderRadius: 20,
+                          fontWeight: 700,
+                          fontSize: '0.8rem',
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6
+                        }}>
+                          Fee: Pending {latestApp.fee_amount ? `(KES ${parseFloat(latestApp.fee_amount).toLocaleString()})` : ''} — Pay via M-Pesa →
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                   
                   <div className="progress-stepper">
                     <div className="progress-track"></div>
@@ -217,61 +266,96 @@ const Dashboard = () => {
 
                     <div className="progress-step">
                       <div className="step-circle done">✓</div>
-                      <div className="progress-step-label">Submitted</div>
+                      <div className="progress-step-label">1. Submitted</div>
                     </div>
 
                     <div className="progress-step">
-                      <div className={`step-circle ${isStepDone(latestApp, 'fee') ? 'done' : 'pending'}`}>
-                        {isStepDone(latestApp, 'fee') ? '✓' : '2'}
+                      <div className={`step-circle ${isFeePaid(latestApp) ? 'done' : 'pending'}`}>
+                        {isFeePaid(latestApp) ? '✓' : '2'}
                       </div>
-                      <div className="progress-step-label">Evaluation Fee</div>
+                      <div className="progress-step-label">
+                        2. Evaluation Fee
+                        {isFeePaid(latestApp) && (
+                          <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--success)', fontWeight: 800 }}>
+                            PAID ✓
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="progress-step">
                       <div className={`step-circle ${isStepDone(latestApp, 'review') ? 'done' : 'pending'}`}>
                         {isStepDone(latestApp, 'review') ? '✓' : '3'}
                       </div>
-                      <div className="progress-step-label">Admin Review</div>
+                      <div className="progress-step-label">3. Admin Review</div>
                     </div>
 
                     <div className="progress-step">
                       <div className={`step-circle ${isStepDone(latestApp, 'disburse') ? 'done' : 'pending'}`}>
                         {isStepDone(latestApp, 'disburse') ? '✓' : '4'}
                       </div>
-                      <div className="progress-step-label">Disbursement</div>
+                      <div className="progress-step-label">4. Disbursement</div>
                     </div>
                   </div>
                   
                   {needsFeePayment(latestApp) && (
                     <div className="status-banner fee-required">
                       <div>
-                        <div className="status-title">Fee Payment Required</div>
-                        <div className="status-desc">Please pay the 5% evaluation fee to move your application to review.</div>
+                        <div className="status-title">5% Evaluation Fee Required</div>
+                        <div className="status-desc">
+                          Please pay the 5% evaluation fee {latestApp.fee_amount ? `(KES ${parseFloat(latestApp.fee_amount).toLocaleString()})` : ''} to initiate loan officer review.
+                        </div>
                       </div>
-                      <Link to={`/pay/${latestApp.id}`} className="action-btn" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Pay Fee</Link>
+                      <Link to={`/pay/${latestApp.id}`} className="action-btn" style={{ padding: '0.55rem 1.1rem', fontSize: '0.85rem' }}>
+                        Pay Fee via M-Pesa
+                      </Link>
                     </div>
                   )}
 
                   {isFeePaid(latestApp) && latestApp.status === 'submitted' && (
-                    <div className="status-banner review">
-                      <div>
-                        <div className="status-title">Evaluation Fee Paid</div>
-                        <div className="status-desc">Your payment was received. Your application will move to admin review shortly.</div>
+                    <div className="status-banner review" style={{ borderLeft: '4px solid var(--success)' }}>
+                      <div style={{ flex: 1 }}>
+                        <div className="status-title" style={{ color: 'var(--success)' }}>Evaluation Fee Received & Verified</div>
+                        <div className="status-desc">
+                          Your fee payment of KES {parseFloat(latestApp.fee_amount || 0).toLocaleString()} has been recorded. Application is proceeding to review.
+                        </div>
                       </div>
+                      <Link to={`/pay/${latestApp.id}`} className="secondary-btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                        View Receipt
+                      </Link>
                     </div>
                   )}
 
                   {latestApp.status === 'under_review' && (
-                    <div className="status-banner review">
-                      <div className="status-title">Under Review</div>
-                      <div className="status-desc">Our loan officers are currently reviewing your credit profile. You will receive a notification as soon as a decision is made.</div>
+                    <div className="status-banner review" style={{ borderLeft: '4px solid var(--info)' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div className="status-title" style={{ color: 'var(--info)' }}>Evaluation Fee Paid • Under Review</div>
+                          <span style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '0.15rem 0.5rem', borderRadius: 4, fontSize: '0.72rem', fontWeight: 700 }}>
+                            FEE PAID ✓
+                          </span>
+                        </div>
+                        <div className="status-desc">
+                          Your 5% evaluation fee of <strong>KES {parseFloat(latestApp.fee_amount || 0).toLocaleString()}</strong> was confirmed
+                          {latestApp.fee_receipt ? <> (M-Pesa Receipt: <code style={{ fontWeight: 700 }}>{latestApp.fee_receipt}</code>)</> : ''}.
+                          Our underwriting team is actively reviewing your credit profile.
+                        </div>
+                      </div>
+                      <Link to={`/pay/${latestApp.id}`} className="secondary-btn" style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                        View Receipt
+                      </Link>
                     </div>
                   )}
 
                   {latestApp.status === 'approved' && (
                     <div className="status-banner approved">
-                      <div className="status-title">Approved & Ready</div>
-                      <div className="status-desc">Your loan is approved! The funds are currently being prepared for disbursement to your M-Pesa account.</div>
+                      <div style={{ flex: 1 }}>
+                        <div className="status-title">Approved & Ready for Disbursement</div>
+                        <div className="status-desc">Congratulations! Your loan request has been officially approved. Funds are prepared for M-Pesa B2C payout.</div>
+                      </div>
+                      <Link to={`/pay/${latestApp.id}`} className="secondary-btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                        Fee Receipt
+                      </Link>
                     </div>
                   )}
 
@@ -399,19 +483,55 @@ const Dashboard = () => {
               )}
 
               <div className="panel">
-                <h3>Recent activity</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0 }}>Recent Activity</h3>
+                  <Link to="/applications" style={{ fontSize: '0.85rem', color: 'var(--brand)', textDecoration: 'none', fontWeight: 600 }}>
+                    View All →
+                  </Link>
+                </div>
                 <ul className="activity-list">
                   {recent.map(r => (
-                    <li key={r.id} className="activity-item">
+                    <li key={r.id} className="activity-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, padding: '1rem 0' }}>
                       <div className="activity-info">
-                        <div className="activity-title">{r.title}</div>
-                        <div className="activity-date muted">{r.date ? new Date(r.date).toLocaleDateString() : ''}</div>
+                        <div className="activity-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span>{r.title}</span>
+                          <span style={{
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '4px',
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            textTransform: 'uppercase',
+                            background: r.status === 'disbursed' || r.status === 'repaid' || r.status === 'approved' ? 'var(--success-bg)' : r.status === 'rejected' ? 'var(--error-bg)' : 'var(--info-bg)',
+                            color: r.status === 'disbursed' || r.status === 'repaid' || r.status === 'approved' ? 'var(--success)' : r.status === 'rejected' ? 'var(--error)' : 'var(--info)'
+                          }}>
+                            {r.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <div className="activity-date muted" style={{ fontSize: '0.8rem', marginTop: 4 }}>
+                          {r.purpose ? `${r.purpose} • ` : ''}{r.date ? new Date(r.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div className="activity-amount">{r.amount}</div>
-                        {r.status === 'submitted' && r.fee_status !== 'completed' && (
-                          <Link to={`/pay/${r.id}`} className="action-btn" style={{ padding: '0.3rem 0.7rem', fontSize: '0.85rem' }}>
-                            Pay fee
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <div className="activity-amount" style={{ fontSize: '1.05rem', fontWeight: 800 }}>{r.amount}</div>
+                        {r.fee_status === 'completed' ? (
+                          <span style={{
+                            background: 'var(--success-bg)',
+                            color: 'var(--success)',
+                            border: '1px solid rgba(45, 122, 62, 0.25)',
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: 20,
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}>
+                            <span>✓</span> Fee: PAID
+                          </span>
+                        ) : (
+                          <Link to={`/pay/${r.id}`} className="action-btn" style={{ padding: '0.35rem 0.8rem', fontSize: '0.78rem', background: 'var(--warning)', color: '#fff' }}>
+                            Pay Fee →
                           </Link>
                         )}
                       </div>
@@ -423,16 +543,28 @@ const Dashboard = () => {
 
             <aside className="dash-right">
               <div className="panel">
-                <h3>Quick actions</h3>
+                <h3>Quick Actions</h3>
                 <div className="actions">
-                  <Link to="/applications" className="action-btn">Apply for loan</Link>
-                  <Link to={pendingFeeAppId ? `/pay/${pendingFeeAppId}` : '/applications'} className="action-btn secondary">Pay evaluation fee</Link>
+                  <Link to="/applications" className="action-btn" style={{ padding: '0.85rem' }}>
+                    Apply for a Loan
+                  </Link>
+                  {pendingFeeAppId ? (
+                    <Link to={`/pay/${pendingFeeAppId}`} className="action-btn" style={{ background: 'var(--warning)', color: '#fff', padding: '0.85rem' }}>
+                      Pay Pending Fee →
+                    </Link>
+                  ) : (
+                    <Link to="/applications" className="action-btn secondary" style={{ padding: '0.85rem' }}>
+                      View Loan History
+                    </Link>
+                  )}
                 </div>
               </div>
 
               <div className="panel small">
-                <h4>Support</h4>
-                <p className="muted">Need help? Contact support@fairfund.local</p>
+                <h4>Fair Fund Support</h4>
+                <p className="muted" style={{ fontSize: '0.85rem', lineHeight: '1.5' }}>
+                  Have questions about your credit score or M-Pesa transactions? Reach out to support@fairfund.local.
+                </p>
               </div>
             </aside>
           </section>

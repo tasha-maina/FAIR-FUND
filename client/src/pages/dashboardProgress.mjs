@@ -22,3 +22,24 @@ export const getProgressWidth = (app) => {
   if (isFeePaid(app)) return '33.33%'
   return '0%'
 }
+
+export const getStepState = (app, step) => {
+  if (!app) return 'pending'
+  if (step === 'submitted') return 'done'
+  if (step === 'fee') {
+    if (isFeePaid(app)) return 'done'
+    return app.status === 'submitted' ? 'active' : 'pending'
+  }
+  if (step === 'review') {
+    if (['approved', 'disbursed', 'repaid'].includes(app.status)) return 'done'
+    if (app.status === 'under_review' || (app.status === 'submitted' && isFeePaid(app))) return 'active'
+    return 'pending'
+  }
+  if (step === 'disburse') {
+    if (['disbursed', 'repaid'].includes(app.status)) return 'done'
+    if (app.status === 'approved') return 'active'
+    return 'pending'
+  }
+  return 'pending'
+}
+

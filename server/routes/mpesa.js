@@ -27,6 +27,31 @@ const getAccessToken = async () => {
   return token
 }
 
+const queryStkStatus = async (checkoutRequestId) => {
+  if (!checkoutRequestId) return null
+  try {
+    const accessToken = await getAccessToken()
+    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
+    const password = Buffer.from(
+      `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
+    ).toString('base64')
+
+    const response = await axios.post(
+      'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query',
+      {
+        BusinessShortCode: process.env.MPESA_SHORTCODE,
+        Password: password,
+        Timestamp: timestamp,
+        CheckoutRequestID: checkoutRequestId
+      },
+      { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 6000 }
+    )
+    return response.data
+  } catch (err) {
+    return err.response?.data || null
+  }
+}
+
 // Shared callback processor so we can reuse logic for real callbacks and tests
 const handleStkCallback = async (callbackData) => {
   const {
@@ -67,6 +92,26 @@ const handleStkCallback = async (callbackData) => {
          WHERE id = $1`,
         [fee.application_id]
       )
+
+      try {
+        const appRes = await pool.query('SELECT user_id, loan_amount FROM loan_applications WHERE id = $1', [fee.application_id])
+        if (appRes.rows.length > 0) {
+          const { user_id, loan_amount } = appRes.rows[0]
+          await pool.query(
+            `INSERT INTO notifications (user_id, title, body, type, meta)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              user_id,
+              'Evaluation Fee Paid',
+              `Your evaluation fee of KES ${parseFloat(amount || 0).toLocaleString()} for loan application of KES ${parseFloat(loan_amount).toLocaleString()} has been received (Receipt: ${mpesaCode}). Your application is now under review.`,
+              'payment',
+              JSON.stringify({ application_id: fee.application_id, mpesa_receipt: mpesaCode })
+            ]
+          )
+        }
+      } catch (e) {
+        console.warn('Failed to notify fee payment', e)
+      }
 
       return { status: 'completed', mpesaCode, amount, phone }
     } else {
@@ -177,26 +222,51 @@ const normalizePhoneNumber = (phoneNumber = '') => {
 router.post('/stkpush', protect, async (req, res) => {
   const { phone_number, application_id } = req.body
 
+  if (!application_id) {
+    return res.status(400).json({ message: 'application_id is required' })
+  }
+
   try {
     const feeResult = await pool.query(
-      `SELECT ef.id, ef.amount, ef.payment_status, la.status AS application_status
-       FROM evaluation_fees ef
-       JOIN loan_applications la ON la.id = ef.application_id
-       WHERE ef.application_id = $1`,
+      `SELECT la.id, la.user_id, la.loan_amount, la.status AS application_status,
+              ef.id AS fee_id, ef.amount AS fee_amount, ef.payment_status
+       FROM loan_applications la
+       LEFT JOIN evaluation_fees ef ON ef.application_id = la.id
+       WHERE la.id = $1`,
       [application_id]
     )
 
     if (feeResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Evaluation fee not found' })
+      return res.status(404).json({ message: 'Application not found' })
     }
 
-    const fee = feeResult.rows[0]
+    const app = feeResult.rows[0]
 
-    if (fee.payment_status === 'completed') {
-      return res.status(400).json({ message: 'Evaluation fee already paid' })
+    if (req.user.role !== 'admin' && app.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized access to application' })
     }
 
-    const amount = Math.ceil(parseFloat(fee.amount))
+    if (app.payment_status === 'completed') {
+      return res.status(200).json({
+        message: 'Evaluation fee already paid',
+        payment_status: 'completed',
+        application_status: app.application_status
+      })
+    }
+
+    let feeId = app.fee_id
+    let feeAmount = app.fee_amount
+    if (!feeId) {
+      feeAmount = (parseFloat(app.loan_amount) * 0.05).toFixed(2)
+      const insertedFee = await pool.query(
+        `INSERT INTO evaluation_fees (application_id, amount, payment_status)
+         VALUES ($1, $2, 'pending') RETURNING id`,
+        [application_id, feeAmount]
+      )
+      feeId = insertedFee.rows[0].id
+    }
+
+    const amount = Math.max(1, Math.ceil(parseFloat(feeAmount)))
     const accessToken = await getAccessToken()
 
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)
@@ -204,7 +274,7 @@ router.post('/stkpush', protect, async (req, res) => {
       `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
     ).toString('base64')
 
-    const formattedPhone = normalizePhoneNumber(phone_number)
+    const formattedPhone = normalizePhoneNumber(phone_number || '')
 
     const response = await axios.post(
       'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
@@ -218,10 +288,10 @@ router.post('/stkpush', protect, async (req, res) => {
         PartyB: process.env.MPESA_SHORTCODE,
         PhoneNumber: formattedPhone,
         CallBackURL: process.env.MPESA_CALLBACK_URL,
-        AccountReference: application_id,
+        AccountReference: application_id.slice(0, 12),
         TransactionDesc: 'Loan evaluation fee'
       },
-      { headers: { Authorization: `Bearer ${accessToken}` } }
+      { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 10000 }
     )
 
     const { CheckoutRequestID } = response.data
@@ -229,21 +299,26 @@ router.post('/stkpush', protect, async (req, res) => {
     if (CheckoutRequestID) {
       await pool.query(
         'UPDATE evaluation_fees SET checkout_request_id = $1 WHERE id = $2',
-        [CheckoutRequestID, fee.id]
+        [CheckoutRequestID, feeId]
       )
     }
 
     return res.status(200).json({
       message: 'STK push sent to your phone',
       data: response.data,
-      application_status: fee.application_status,
-      payment_status: fee.payment_status,
+      application_status: app.application_status,
+      payment_status: 'pending',
+      fee_amount: feeAmount,
+      phone: formattedPhone,
       checkout_request_id: CheckoutRequestID || null
     })
 
   } catch (err) {
-    console.error(err.response?.data || err.message)
-    return res.status(500).json({ message: 'M-Pesa request failed', error: err.response?.data || err.message })
+    console.error('STK push error:', err.response?.data || err.message)
+    return res.status(500).json({
+      message: err.response?.data?.errorMessage || 'M-Pesa request failed',
+      error: err.response?.data || err.message
+    })
   }
 })
 
@@ -379,19 +454,99 @@ router.get('/application-status/:applicationId', protect, async (req, res) => {
   const { applicationId } = req.params
 
   try {
-    const result = await pool.query(
-      `SELECT ef.payment_status, ef.checkout_request_id, la.status AS application_status
-       FROM evaluation_fees ef
-       JOIN loan_applications la ON la.id = ef.application_id
-       WHERE ef.application_id = $1`,
+    const appResult = await pool.query(
+      `SELECT la.id AS application_id, la.user_id, la.loan_amount, la.purpose, la.credit_score, la.status AS application_status,
+              ef.id AS fee_id, ef.amount AS fee_amount, ef.payment_status, ef.checkout_request_id,
+              ef.mpesa_transaction_id, ef.paid_at,
+              u.full_name, u.phone_number AS user_phone
+       FROM loan_applications la
+       LEFT JOIN evaluation_fees ef ON ef.application_id = la.id
+       JOIN users u ON u.id = la.user_id
+       WHERE la.id = $1`,
       [applicationId]
     )
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Application fee record not found' })
+    if (appResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Application record not found' })
     }
 
-    return res.json(result.rows[0])
+    const record = appResult.rows[0]
+
+    // Authorization: owner or admin
+    if (req.user.role !== 'admin' && record.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized access to application' })
+    }
+
+    // Ensure fee row exists
+    if (!record.fee_id) {
+      const calculatedFee = (parseFloat(record.loan_amount) * 0.05).toFixed(2)
+      const newFee = await pool.query(
+        `INSERT INTO evaluation_fees (application_id, amount, payment_status)
+         VALUES ($1, $2, 'pending') RETURNING *`,
+        [applicationId, calculatedFee]
+      )
+      record.fee_id = newFee.rows[0].id
+      record.fee_amount = calculatedFee
+      record.payment_status = 'pending'
+    }
+
+    // If pending and has checkout_request_id, check with Safaricom query
+    if (record.payment_status === 'pending' && record.checkout_request_id) {
+      const queryResult = await queryStkStatus(record.checkout_request_id)
+      if (queryResult && (queryResult.ResultCode === 0 || queryResult.ResultCode === '0')) {
+        const mpesaReceipt = queryResult.MpesaReceiptNumber || `MPESA_${Date.now()}`
+        await pool.query(
+          `UPDATE evaluation_fees
+           SET payment_status = 'completed', mpesa_transaction_id = $1, paid_at = NOW()
+           WHERE application_id = $2`,
+          [mpesaReceipt, applicationId]
+        )
+        await pool.query(
+          `UPDATE loan_applications
+           SET status = 'under_review', updated_at = NOW()
+           WHERE id = $1`,
+          [applicationId]
+        )
+        record.payment_status = 'completed'
+        record.application_status = 'under_review'
+        record.mpesa_transaction_id = mpesaReceipt
+        record.paid_at = new Date().toISOString()
+
+        try {
+          await pool.query(
+            `INSERT INTO notifications (user_id, title, body, type, meta)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              record.user_id,
+              'Evaluation Fee Paid',
+              `Your evaluation fee of KES ${parseFloat(record.fee_amount).toLocaleString()} has been confirmed (Receipt: ${mpesaReceipt}). Your loan is now under review.`,
+              'payment',
+              JSON.stringify({ application_id: applicationId, receipt: mpesaReceipt })
+            ]
+          )
+        } catch (e) {
+          console.warn('Failed to insert notification', e)
+        }
+      }
+    }
+
+    return res.json({
+      application_id: record.application_id,
+      loan_amount: record.loan_amount,
+      purpose: record.purpose,
+      credit_score: record.credit_score,
+      application_status: record.payment_status === 'completed' && record.application_status === 'submitted'
+        ? 'under_review'
+        : record.application_status,
+      fee_id: record.fee_id,
+      fee_amount: record.fee_amount,
+      payment_status: record.payment_status,
+      checkout_request_id: record.checkout_request_id,
+      mpesa_transaction_id: record.mpesa_transaction_id,
+      paid_at: record.paid_at,
+      user_phone: record.user_phone,
+      full_name: record.full_name
+    })
   } catch (err) {
     console.error('Application fee status error', err)
     return res.status(500).json({ message: 'Server error' })
@@ -399,7 +554,7 @@ router.get('/application-status/:applicationId', protect, async (req, res) => {
 })
 
 router.post('/confirm-payment', protect, async (req, res) => {
-  const { application_id } = req.body
+  const { application_id, mpesa_receipt_number } = req.body
 
   if (!application_id) {
     return res.status(400).json({ message: 'application_id is required' })
@@ -407,20 +562,36 @@ router.post('/confirm-payment', protect, async (req, res) => {
 
   try {
     const ownership = await pool.query(
-      `SELECT id FROM loan_applications WHERE id = $1 AND user_id = $2`,
-      [application_id, req.user.id]
+      `SELECT la.id, la.user_id, la.loan_amount, ef.amount AS fee_amount, ef.payment_status
+       FROM loan_applications la
+       LEFT JOIN evaluation_fees ef ON ef.application_id = la.id
+       WHERE la.id = $1 AND (la.user_id = $2 OR $3 = 'admin')`,
+      [application_id, req.user.id, req.user.role]
     )
 
     if (ownership.rows.length === 0) {
       return res.status(404).json({ message: 'Application not found' })
     }
 
-    await pool.query(
-      `UPDATE evaluation_fees
-       SET payment_status = 'completed', mpesa_transaction_id = 'manual-confirmation', paid_at = NOW()
-       WHERE application_id = $1`,
-      [application_id]
-    )
+    const app = ownership.rows[0]
+    const receipt = mpesa_receipt_number?.trim() || `QA${Date.now().toString(36).toUpperCase()}`
+
+    let feeAmount = app.fee_amount
+    if (!feeAmount) {
+      feeAmount = (parseFloat(app.loan_amount) * 0.05).toFixed(2)
+      await pool.query(
+        `INSERT INTO evaluation_fees (application_id, amount, payment_status, mpesa_transaction_id, paid_at)
+         VALUES ($1, $2, 'completed', $3, NOW())`,
+        [application_id, feeAmount, receipt]
+      )
+    } else {
+      await pool.query(
+        `UPDATE evaluation_fees
+         SET payment_status = 'completed', mpesa_transaction_id = $1, paid_at = NOW()
+         WHERE application_id = $2`,
+        [receipt, application_id]
+      )
+    }
 
     await pool.query(
       `UPDATE loan_applications
@@ -429,7 +600,29 @@ router.post('/confirm-payment', protect, async (req, res) => {
       [application_id]
     )
 
-    return res.json({ ok: true, message: 'Payment confirmed' })
+    try {
+      await pool.query(
+        `INSERT INTO notifications (user_id, title, body, type, meta)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          app.user_id,
+          'Evaluation Fee Paid',
+          `Your evaluation fee of KES ${parseFloat(feeAmount).toLocaleString()} for Application ${application_id.slice(0, 8)} has been confirmed (Receipt: ${receipt}). Your loan is now under review.`,
+          'payment',
+          JSON.stringify({ application_id, receipt })
+        ]
+      )
+    } catch (e) {
+      console.warn('Failed to insert fee notification', e)
+    }
+
+    return res.json({
+      ok: true,
+      message: 'Payment confirmed successfully',
+      payment_status: 'completed',
+      application_status: 'under_review',
+      mpesa_transaction_id: receipt
+    })
   } catch (err) {
     console.error('Confirm payment error', err)
     return res.status(500).json({ message: 'Server error' })
