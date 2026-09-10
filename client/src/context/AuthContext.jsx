@@ -13,7 +13,13 @@ export const AuthProvider = ({ children }) => {
 
     const init = async () => {
       if (!token) {
-        if (storedUser) setUser(JSON.parse(storedUser))
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser))
+          } catch {
+            localStorage.removeItem('user')
+          }
+        }
         setLoading(false)
         return
       }
