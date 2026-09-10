@@ -51,6 +51,14 @@ router.post('/', protect, async (req, res) => {
   const { loan_amount, purpose, employment_status, stable_income, previous_repayment } = req.body
   const user_id = req.user.id
 
+  if (!loan_amount || isNaN(parseFloat(loan_amount)) || parseFloat(loan_amount) <= 0) {
+    return res.status(400).json({ message: 'A valid positive loan amount is required' })
+  }
+
+  if (!purpose || typeof purpose !== 'string' || !purpose.trim()) {
+    return res.status(400).json({ message: 'Loan purpose is required' })
+  }
+
   try {
     const { score, breakdown, risk_level } = calculateCreditScore({
       employment_status,

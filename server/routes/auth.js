@@ -8,6 +8,14 @@ const protect = require('../middleware/auth')
 router.post('/register', async (req, res) => {
   const { full_name, email, password, phone_number, national_id } = req.body
 
+  if (!full_name || !email || !password || !phone_number) {
+    return res.status(400).json({ message: 'All fields are required' })
+  }
+
+  if (typeof password !== 'string' || password.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters' })
+  }
+
   // enforce national_id presence and basic format server-side
   if (!national_id || !/^[0-9]{7,12}$/.test(national_id)) {
     return res.status(400).json({ message: 'National ID is required and must be 7-12 digits' })
@@ -47,6 +55,10 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' })
+  }
 
   try {
     const user = await pool.query(

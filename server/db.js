@@ -9,7 +9,7 @@ const pool = new Pool({
   ssl: isProduction ? { rejectUnauthorized: false } : false,
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
 })
 
 pool.on('error', (err) => {
@@ -17,7 +17,10 @@ pool.on('error', (err) => {
 })
 
 pool.connect()
-  .then(() => console.log('Connected to Fair Fund database'))
+  .then((client) => {
+    console.log('Connected to Fair Fund database')
+    client.release()
+  })
   .catch(err => console.error('Database connection error', err))
 
 module.exports = pool

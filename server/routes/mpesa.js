@@ -315,8 +315,9 @@ router.post('/stkpush', protect, async (req, res) => {
 
   } catch (err) {
     console.error('STK push error:', err.response?.data || err.message)
-    return res.status(500).json({
-      message: err.response?.data?.errorMessage || 'M-Pesa request failed',
+    const isValidation = err.message && err.message.toLowerCase().includes('phone number')
+    return res.status(isValidation ? 400 : 500).json({
+      message: err.response?.data?.errorMessage || err.message || 'M-Pesa request failed',
       error: err.response?.data || err.message
     })
   }
@@ -395,7 +396,11 @@ router.post('/repay', protect, async (req, res) => {
 
   } catch (err) {
     console.error(err.response?.data || err.message)
-    return res.status(500).json({ message: 'M-Pesa request failed', error: err.response?.data || err.message })
+    const isValidation = err.message && err.message.toLowerCase().includes('phone number')
+    return res.status(isValidation ? 400 : 500).json({
+      message: err.response?.data?.errorMessage || err.message || 'M-Pesa request failed',
+      error: err.response?.data || err.message
+    })
   }
 })
 
